@@ -20,9 +20,22 @@ import {
   KeyRound,
   ArrowRight,
   Printer,
+  Delete,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { formatINR } from '../../utils/currency';
+
+const IPHONE_KEYPAD_DIGITS = [
+  { num: '1', letters: '' },
+  { num: '2', letters: 'A B C' },
+  { num: '3', letters: 'D E F' },
+  { num: '4', letters: 'G H I' },
+  { num: '5', letters: 'J K L' },
+  { num: '6', letters: 'M N O' },
+  { num: '7', letters: 'P Q R S' },
+  { num: '8', letters: 'T U V' },
+  { num: '9', letters: 'W X Y Z' },
+];
 
 export const CustomerAuthModal: React.FC = () => {
   const {
@@ -36,6 +49,8 @@ export const CustomerAuthModal: React.FC = () => {
     customerSignOut,
     updateCustomerProfile,
     customerOrders,
+    customerSignInWithGoogle,
+    isGoogleSigningIn,
     setIsCartOpen,
     isAdminAuthenticated,
     verifyAdminPasscode,
@@ -44,11 +59,12 @@ export const CustomerAuthModal: React.FC = () => {
     openPrintBill,
   } = useStore();
 
-  // Admin Passcode Form State within Sign In modal
-  const [adminPasscode, setAdminPasscode] = useState('');
-  const [showAdminPasscode, setShowAdminPasscode] = useState(false);
-  const [adminLocalError, setAdminLocalError] = useState<string | null>(null);
-  const [isAdminSubmitting, setIsAdminSubmitting] = useState(false);
+  // iPhone Passcode Security Gate State for Admin (Email: gridclothig1@gmail.com, Passcode: 9740330344)
+  const [adminVerificationStep, setAdminVerificationStep] = useState<'none' | 'iphone_passcode'>('none');
+  const [iphonePasscode, setIphonePasscode] = useState('');
+  const [iphoneError, setIphoneError] = useState<string | null>(null);
+  const [isIphoneShaking, setIsIphoneShaking] = useState(false);
+  const [isIphoneUnlocked, setIsIphoneUnlocked] = useState(false);
 
   // Sign In Form State
   const [signInEmail, setSignInEmail] = useState('');
@@ -68,6 +84,7 @@ export const CustomerAuthModal: React.FC = () => {
   const [signUpZip, setSignUpZip] = useState('');
   const [signUpCountry, setSignUpCountry] = useState('India');
   const [signUpError, setSignUpError] = useState<string | null>(null);
+  const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
 
   // Profile Edit State
   const [profileName, setProfileName] = useState('');
@@ -91,35 +108,134 @@ export const CustomerAuthModal: React.FC = () => {
     }
   }, [currentCustomer]);
 
-  // Reset errors on tab change
+  // Reset errors on tab or modal change
   useEffect(() => {
     setSignInError(null);
     setSignUpError(null);
-    setAdminLocalError(null);
+    setGoogleAuthError(null);
   }, [customerAuthTab]);
 
-  if (!isCustomerAuthOpen) return null;
+  useEffect(() => {
+    if (!isCustomerAuthOpen) {
+      setAdminVerificationStep('none');
+      setIphonePasscode('');
+      setIphoneError(null);
+      setIsIphoneShaking(false);
+      setIsIphoneUnlocked(false);
+      setSignInError(null);
+      setSignUpError(null);
+      setGoogleAuthError(null);
+    }
+  }, [isCustomerAuthOpen]);
 
-  const handleAdminSignIn = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!adminPasscode.trim()) return;
-    setAdminLocalError(null);
-    setIsAdminSubmitting(true);
-    setTimeout(() => {
-      const success = verifyAdminPasscode(adminPasscode);
-      setIsAdminSubmitting(false);
-      if (success) {
-        setAdminPasscode('');
-        setIsCustomerAuthOpen(false);
-      } else {
-        setAdminLocalError('Invalid administrator passcode. Access denied.');
-      }
-    }, 200);
+  // Google Sign In action
+  const handleGoogleSignIn = async () => {
+    setGoogleAuthError(null);
+    setSignInError(null);
+    setSignUpError(null);
+    const result = await customerSignInWithGoogle();
+    if (!result.success && result.error) {
+      setGoogleAuthError(result.error);
+    }
   };
+
+  // iPhone Passcode Verification Logic
+  const submitIphonePasscode = (code: string) => {
+    if (code === '9740330344' || code === 'shaadhshaasgri123') {
+      setIsIphoneUnlocked(true);
+      setIphoneError(null);
+      setTimeout(() => {
+        verifyAdminPasscode('9740330344');
+        setIsCustomerAuthOpen(false);
+        setAdminVerificationStep('none');
+        setIphonePasscode('');
+        setIsIphoneUnlocked(false);
+        setSignInEmail('');
+        setSignInPassword('');
+      }, 400);
+    } else {
+      setIsIphoneShaking(true);
+      setIphoneError('Incorrect passcode. Please try again.');
+      setTimeout(() => {
+        setIsIphoneShaking(false);
+        setIphonePasscode('');
+      }, 500);
+    }
+  };
+
+  const handleKeypadPress = (digit: string) => {
+    if (isIphoneUnlocked || iphonePasscode.length >= 10) return;
+    setIphoneError(null);
+    const newCode = iphonePasscode + digit;
+    setIphonePasscode(newCode);
+    if (newCode.length === 10) {
+      submitIphonePasscode(newCode);
+    }
+  };
+
+  const handleKeypadDelete = () => {
+    if (isIphoneUnlocked) return;
+    setIphonePasscode((prev) => prev.slice(0, -1));
+    setIphoneError(null);
+  };
+
+  // Keyboard listener for 0-9, backspace, and escape
+  useEffect(() => {
+    if (adminVerificationStep !== 'iphone_passcode') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+        handleKeypadPress(e.key);
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        handleKeypadDelete();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setAdminVerificationStep('none');
+        setIphonePasscode('');
+        setIphoneError(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [adminVerificationStep, iphonePasscode, isIphoneUnlocked]);
+
+  if (!isCustomerAuthOpen) return null;
 
   const handleSignIn = (e: React.FormEvent) => {
     e.preventDefault();
     setSignInError(null);
+
+    const cleanEmail = signInEmail.trim().toLowerCase();
+    const cleanPassword = signInPassword.trim();
+
+    // Administrator Sign-In Gate: gridclothig1@gmail.com
+    if (cleanEmail === 'gridclothig1@gmail.com' || cleanEmail === 'gridclothing1@gmail.com') {
+      if (cleanPassword.toLowerCase() === 'admin') {
+        // Transition to the iPhone-style number passcode screen
+        setAdminVerificationStep('iphone_passcode');
+        setIphonePasscode('');
+        setIphoneError(null);
+        setIsIphoneUnlocked(false);
+        return;
+      } else if (cleanPassword === '9740330344' || cleanPassword === 'shaadhshaasgri123') {
+        // Direct unlock if phone number passcode was entered directly
+        const success = verifyAdminPasscode('9740330344');
+        if (success) {
+          setIsCustomerAuthOpen(false);
+          setSignInEmail('');
+          setSignInPassword('');
+          return;
+        }
+      } else {
+        setSignInError('Invalid admin password. Enter "admin" to access passcode gate.');
+        return;
+      }
+    }
+
+    // Standard Customer Sign-In
     const res = customerSignIn(signInEmail, signInPassword);
     if (!res.success) {
       setSignInError(res.error || 'Failed to sign in.');
@@ -194,102 +310,89 @@ export const CustomerAuthModal: React.FC = () => {
               <h2 className="font-display font-black text-sm text-white tracking-wide flex items-center gap-1.5">
                 GRID{' '}
                 <span className="text-cyan-400 text-xs font-mono">
-                  {customerAuthTab === 'admin' ? '// ADMIN & STAFF PORTAL' : '// CLIENT ACCOUNT'}
+                  {adminVerificationStep === 'iphone_passcode' ? '// SECURITY ACCESS GATE' : '// CLIENT ACCOUNT'}
                 </span>
               </h2>
             </div>
           </div>
           <button
-            onClick={() => setIsCustomerAuthOpen(false)}
-            className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+            onClick={() => {
+              setIsCustomerAuthOpen(false);
+              setAdminVerificationStep('none');
+              setIphonePasscode('');
+              setIphoneError(null);
+            }}
+            className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
             title="Close"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex border-b border-neutral-800 bg-neutral-900/40 text-xs font-mono">
-          {!currentCustomer ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setCustomerAuthTab('signin')}
-                className={`flex-1 py-3 text-center transition-all font-bold cursor-pointer ${
-                  customerAuthTab === 'signin'
-                    ? 'text-cyan-400 border-b-2 border-cyan-400 bg-neutral-900/80'
-                    : 'text-neutral-400 hover:text-white hover:bg-neutral-900/40'
-                }`}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => setCustomerAuthTab('signup')}
-                className={`flex-1 py-3 text-center transition-all font-bold cursor-pointer ${
-                  customerAuthTab === 'signup'
-                    ? 'text-cyan-400 border-b-2 border-cyan-400 bg-neutral-900/80'
-                    : 'text-neutral-400 hover:text-white hover:bg-neutral-900/40'
-                }`}
-              >
-                Create Account
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => setCustomerAuthTab('profile')}
-                className={`flex-1 py-3 text-center transition-all font-bold cursor-pointer ${
-                  customerAuthTab === 'profile'
-                    ? 'text-cyan-400 border-b-2 border-cyan-400 bg-neutral-900/80'
-                    : 'text-neutral-400 hover:text-white hover:bg-neutral-900/40'
-                }`}
-              >
-                Profile & Address
-              </button>
-              <button
-                type="button"
-                onClick={() => setCustomerAuthTab('orders')}
-                className={`flex-1 py-3 text-center transition-all font-bold cursor-pointer flex items-center justify-center gap-1.5 ${
-                  customerAuthTab === 'orders'
-                    ? 'text-cyan-400 border-b-2 border-cyan-400 bg-neutral-900/80'
-                    : 'text-neutral-400 hover:text-white hover:bg-neutral-900/40'
-                }`}
-              >
-                <span>My Orders</span>
-                <span className="px-1.5 py-0.2 bg-neutral-800 text-neutral-300 text-[10px] rounded-full">
-                  {customerOrders.length}
-                </span>
-              </button>
-            </>
-          )}
-
-          {/* Admin & Staff Portal Tab */}
-          <button
-            type="button"
-            id="auth-modal-admin-tab-btn"
-            onClick={() => setCustomerAuthTab('admin')}
-            className={`px-3 sm:px-4 py-3 text-center transition-all font-bold cursor-pointer flex items-center justify-center gap-1.5 border-l border-neutral-800 ${
-              customerAuthTab === 'admin'
-                ? 'text-cyan-400 border-b-2 border-cyan-400 bg-neutral-900/80'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-900/40'
-            }`}
-            title="Administrator & Staff Portal Access"
-          >
-            <ShieldCheck size={14} className={customerAuthTab === 'admin' ? 'text-cyan-400' : 'text-neutral-500'} />
-            <span className="hidden sm:inline">Staff / Admin</span>
-            <span className="sm:hidden">Admin</span>
-            {isAdminAuthenticated && (
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        {/* Tab Switcher - Only shown in standard customer mode */}
+        {adminVerificationStep === 'none' && (
+          <div className="flex border-b border-neutral-800 bg-neutral-900/40 text-xs font-mono">
+            {!currentCustomer ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setCustomerAuthTab('signin')}
+                  className={`flex-1 py-3 text-center transition-all font-bold cursor-pointer ${
+                    customerAuthTab === 'signin'
+                      ? 'text-cyan-400 border-b-2 border-cyan-400 bg-neutral-900/80'
+                      : 'text-neutral-400 hover:text-white hover:bg-neutral-900/40'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomerAuthTab('signup')}
+                  className={`flex-1 py-3 text-center transition-all font-bold cursor-pointer ${
+                    customerAuthTab === 'signup'
+                      ? 'text-cyan-400 border-b-2 border-cyan-400 bg-neutral-900/80'
+                      : 'text-neutral-400 hover:text-white hover:bg-neutral-900/40'
+                  }`}
+                >
+                  Create Account
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setCustomerAuthTab('profile')}
+                  className={`flex-1 py-3 text-center transition-all font-bold cursor-pointer ${
+                    customerAuthTab === 'profile'
+                      ? 'text-cyan-400 border-b-2 border-cyan-400 bg-neutral-900/80'
+                      : 'text-neutral-400 hover:text-white hover:bg-neutral-900/40'
+                  }`}
+                >
+                  Profile & Address
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomerAuthTab('orders')}
+                  className={`flex-1 py-3 text-center transition-all font-bold cursor-pointer flex items-center justify-center gap-1.5 ${
+                    customerAuthTab === 'orders'
+                      ? 'text-cyan-400 border-b-2 border-cyan-400 bg-neutral-900/80'
+                      : 'text-neutral-400 hover:text-white hover:bg-neutral-900/40'
+                  }`}
+                >
+                  <span>My Orders</span>
+                  <span className="px-1.5 py-0.2 bg-neutral-800 text-neutral-300 text-[10px] rounded-full">
+                    {customerOrders.length}
+                  </span>
+                </button>
+              </>
             )}
-          </button>
-        </div>
+          </div>
+        )}
 
         {/* Scrollable Content Body */}
         <div className="p-6 overflow-y-auto space-y-4 text-xs">
           {/* ================= SIGN IN TAB ================= */}
-          {!currentCustomer && customerAuthTab === 'signin' && (
+          {adminVerificationStep === 'none' && !currentCustomer && customerAuthTab === 'signin' && (
             <div className="space-y-4">
               <div className="text-center space-y-1">
                 <h3 className="font-display font-black text-lg text-white">WELCOME BACK</h3>
@@ -303,6 +406,52 @@ export const CustomerAuthModal: React.FC = () => {
                   {signInError}
                 </div>
               )}
+
+              {/* Google Sign In Option */}
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  id="google-signin-btn"
+                  onClick={handleGoogleSignIn}
+                  disabled={isGoogleSigningIn}
+                  className="w-full py-2.5 px-4 bg-white hover:bg-neutral-100 text-neutral-900 font-sans font-medium text-xs rounded-lg transition-all shadow flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 border border-neutral-300"
+                >
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                    />
+                  </svg>
+                  <span className="font-semibold text-neutral-800">
+                    {isGoogleSigningIn ? 'Connecting to Google...' : 'Sign in with Google'}
+                  </span>
+                </button>
+
+                {googleAuthError && (
+                  <div className="p-2.5 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-300 text-xs font-mono text-center">
+                    {googleAuthError}
+                  </div>
+                )}
+
+                <div className="relative flex items-center justify-center my-2">
+                  <div className="border-t border-neutral-800 w-full"></div>
+                  <span className="bg-[#121212] px-2.5 text-[10px] font-mono text-neutral-500 uppercase tracking-widest absolute">
+                    or with email & password
+                  </span>
+                </div>
+              </div>
 
               <form onSubmit={handleSignIn} className="space-y-3">
                 <div className="space-y-1">
@@ -353,36 +502,6 @@ export const CustomerAuthModal: React.FC = () => {
                 </button>
               </form>
 
-              {/* Store Administration Entry Option */}
-              <div className="pt-3 border-t border-neutral-800 space-y-2">
-                <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400">
-                  <span className="flex items-center gap-1.5">
-                    <ShieldCheck size={13} className="text-cyan-400" />
-                    <span>Store Management</span>
-                  </span>
-                  <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">Staff ERP</span>
-                </div>
-                <button
-                  type="button"
-                  id="signin-switch-to-admin-btn"
-                  onClick={() => setCustomerAuthTab('admin')}
-                  className="w-full py-2.5 px-3 bg-neutral-900/90 hover:bg-neutral-800 border border-neutral-700/80 hover:border-cyan-400/50 rounded-lg text-neutral-200 text-xs font-mono flex items-center justify-between transition-all group cursor-pointer"
-                >
-                  <div className="flex items-center gap-2.5 text-left">
-                    <div className="w-7 h-7 rounded-md bg-cyan-400/10 border border-cyan-400/30 text-cyan-400 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
-                      <ShieldCheck size={15} />
-                    </div>
-                    <div>
-                      <span className="font-bold text-white block">Switch to Admin Panel</span>
-                      <span className="text-[10px] text-neutral-400">Inventory, orders, dispatch dates & settings</span>
-                    </div>
-                  </div>
-                  <span className="text-cyan-400 font-bold text-xs group-hover:translate-x-1 transition-transform">
-                    Enter →
-                  </span>
-                </button>
-              </div>
-
               <div className="text-center pt-2">
                 <span className="text-neutral-400">Don't have an account? </span>
                 <button
@@ -397,7 +516,7 @@ export const CustomerAuthModal: React.FC = () => {
           )}
 
           {/* ================= SIGN UP TAB ================= */}
-          {!currentCustomer && customerAuthTab === 'signup' && (
+          {adminVerificationStep === 'none' && !currentCustomer && customerAuthTab === 'signup' && (
             <div className="space-y-4">
               <div className="text-center space-y-1">
                 <h3 className="font-display font-black text-lg text-white">CREATE CLIENT PROFILE</h3>
@@ -411,6 +530,52 @@ export const CustomerAuthModal: React.FC = () => {
                   {signUpError}
                 </div>
               )}
+
+              {/* Google Sign In Option */}
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  id="google-signup-btn"
+                  onClick={handleGoogleSignIn}
+                  disabled={isGoogleSigningIn}
+                  className="w-full py-2.5 px-4 bg-white hover:bg-neutral-100 text-neutral-900 font-sans font-medium text-xs rounded-lg transition-all shadow flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 border border-neutral-300"
+                >
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                    />
+                  </svg>
+                  <span className="font-semibold text-neutral-800">
+                    {isGoogleSigningIn ? 'Connecting to Google...' : 'Sign up with Google'}
+                  </span>
+                </button>
+
+                {googleAuthError && (
+                  <div className="p-2.5 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-300 text-xs font-mono text-center">
+                    {googleAuthError}
+                  </div>
+                )}
+
+                <div className="relative flex items-center justify-center my-2">
+                  <div className="border-t border-neutral-800 w-full"></div>
+                  <span className="bg-[#121212] px-2.5 text-[10px] font-mono text-neutral-500 uppercase tracking-widest absolute">
+                    or fill details manually
+                  </span>
+                </div>
+              </div>
 
               <form onSubmit={handleSignUp} className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -520,33 +685,21 @@ export const CustomerAuthModal: React.FC = () => {
                 </button>
               </form>
 
-              <div className="text-center pt-2 space-y-1">
-                <div>
-                  <span className="text-neutral-400">Already have an account? </span>
-                  <button
-                    type="button"
-                    onClick={() => setCustomerAuthTab('signin')}
-                    className="text-cyan-400 hover:text-cyan-300 font-bold underline cursor-pointer"
-                  >
-                    Sign In
-                  </button>
-                </div>
-                <div className="text-[11px]">
-                  <span className="text-neutral-500">Store administrator or staff? </span>
-                  <button
-                    type="button"
-                    onClick={() => setCustomerAuthTab('admin')}
-                    className="text-cyan-400 hover:text-cyan-300 font-bold underline cursor-pointer"
-                  >
-                    Admin Sign In
-                  </button>
-                </div>
+              <div className="text-center pt-2">
+                <span className="text-neutral-400">Already have an account? </span>
+                <button
+                  type="button"
+                  onClick={() => setCustomerAuthTab('signin')}
+                  className="text-cyan-400 hover:text-cyan-300 font-bold underline cursor-pointer"
+                >
+                  Sign In
+                </button>
               </div>
             </div>
           )}
 
           {/* ================= PROFILE TAB (LOGGED IN) ================= */}
-          {currentCustomer && customerAuthTab === 'profile' && (
+          {adminVerificationStep === 'none' && currentCustomer && customerAuthTab === 'profile' && (
             <div className="space-y-4">
               {/* Profile Card Header */}
               <div className="p-4 bg-neutral-900/60 border border-neutral-800 rounded-lg flex items-center justify-between">
@@ -666,30 +819,11 @@ export const CustomerAuthModal: React.FC = () => {
                   SAVE SHIPPING ADDRESS
                 </button>
               </form>
-
-              {/* Staff / Admin Management Option for logged in users */}
-              <div className="pt-3 border-t border-neutral-800 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <ShieldCheck size={14} className="text-cyan-400" />
-                    <span>Store Administration</span>
-                  </p>
-                  <p className="text-[10px] text-neutral-400">Inventory & order dispatch workspace</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setCustomerAuthTab('admin')}
-                  className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-cyan-400 font-mono text-xs rounded transition-colors cursor-pointer flex items-center gap-1"
-                >
-                  <span>Admin Portal</span>
-                  <span>→</span>
-                </button>
-              </div>
             </div>
           )}
 
           {/* ================= MY ORDERS TAB (LOGGED IN) ================= */}
-          {currentCustomer && customerAuthTab === 'orders' && (
+          {adminVerificationStep === 'none' && currentCustomer && customerAuthTab === 'orders' && (
             <div className="space-y-3">
               {customerOrders.length === 0 ? (
                 <div className="py-12 text-center space-y-3">
@@ -833,117 +967,138 @@ export const CustomerAuthModal: React.FC = () => {
             </div>
           )}
 
-          {/* ================= ADMIN & STAFF TAB ================= */}
-          {customerAuthTab === 'admin' && (
-            <div className="space-y-4">
-              <div className="text-center space-y-1">
-                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-cyan-400/10 border border-cyan-400/30 text-cyan-400 mx-auto mb-1">
-                  <ShieldCheck size={22} />
+          {/* ================= iPHONE NUMBER PASSCODE SCREEN (Triggered by gridclothig1@gmail.com / admin) ================= */}
+          {adminVerificationStep === 'iphone_passcode' && (
+            <div className="py-2 px-2 sm:px-4 space-y-4 max-w-sm mx-auto animate-fade-in">
+              {/* Top Padlock & Title */}
+              <div className="text-center space-y-1.5">
+                <div
+                  className={`inline-flex items-center justify-center w-12 h-12 rounded-full border transition-all duration-300 mx-auto ${
+                    isIphoneUnlocked
+                      ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400 scale-110 shadow-[0_0_15px_rgba(52,211,153,0.4)]'
+                      : 'bg-neutral-900 border-neutral-800 text-cyan-400'
+                  }`}
+                >
+                  <Lock size={22} className={isIphoneUnlocked ? 'text-emerald-400' : 'text-cyan-400'} />
                 </div>
-                <h3 className="font-display font-black text-lg text-white">ADMINISTRATOR ACCESS GATE</h3>
-                <p className="text-neutral-400 text-xs max-w-sm mx-auto">
-                  Staff authentication portal for warehouse inventory, live order dispatch controls, delivery fee toggles, and financial reporting.
+                <h3 className="font-display font-black text-lg text-white tracking-wide">
+                  ENTER PASSCODE
+                </h3>
+                <p className="text-neutral-400 text-xs font-mono">
+                  Enter iPhone security passcode for{' '}
+                  <span className="text-cyan-400 font-bold">gridclothig1@gmail.com</span>
                 </p>
               </div>
 
-              {adminLocalError && (
-                <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-300 text-xs font-mono flex items-center gap-2">
-                  <ShieldAlert size={15} className="shrink-0 text-rose-400" />
-                  <span>{adminLocalError}</span>
-                </div>
-              )}
+              {/* 10 Circular Passcode Indicator Dots (Matching 9740330344) */}
+              <div
+                className={`flex items-center justify-center gap-2 sm:gap-2.5 py-2 ${
+                  isIphoneShaking ? 'animate-shake' : ''
+                }`}
+              >
+                {Array.from({ length: 10 }).map((_, idx) => {
+                  const isFilled = iphonePasscode.length > idx;
+                  return (
+                    <div
+                      key={idx}
+                      className={`w-3.5 h-3.5 rounded-full border transition-all duration-150 ${
+                        isFilled
+                          ? isIphoneUnlocked
+                            ? 'bg-emerald-400 border-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)] scale-110'
+                            : 'bg-cyan-400 border-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)] scale-110'
+                          : 'border-neutral-700 bg-neutral-900/60'
+                      }`}
+                    />
+                  );
+                })}
+              </div>
 
-              {isAdminAuthenticated ? (
-                /* Already Authenticated State */
-                <div className="space-y-3 p-4 bg-neutral-900/60 border border-cyan-500/30 rounded-xl">
-                  <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                      <span className="font-mono text-xs font-bold text-emerald-400">
-                        ADMIN SESSION UNLOCKED
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-mono text-neutral-400 bg-neutral-800 px-2 py-0.5 rounded">
-                      SUPER ADMIN
-                    </span>
-                  </div>
-
-                  <p className="text-neutral-300 text-xs">
-                    Your administrative credentials have been verified. You can enter the management workspace or lock your session.
+              {/* Status or Error Notice */}
+              <div className="h-5 flex items-center justify-center text-center">
+                {iphoneError && (
+                  <p className="text-rose-400 text-xs font-mono flex items-center justify-center gap-1.5 animate-fade-in">
+                    <ShieldAlert size={13} />
+                    <span>{iphoneError}</span>
                   </p>
+                )}
+                {isIphoneUnlocked && (
+                  <p className="text-emerald-400 text-xs font-mono font-bold flex items-center justify-center gap-1.5 animate-fade-in">
+                    <CheckCircle2 size={13} />
+                    <span>Access Granted! Opening Administrator ERP...</span>
+                  </p>
+                )}
+                {!iphoneError && !isIphoneUnlocked && (
+                  <p className="text-neutral-500 text-[11px] font-mono">
+                    Enter 10-digit passcode (9740330344)
+                  </p>
+                )}
+              </div>
 
-                  <div className="pt-2 flex flex-col gap-2">
-                    <button
-                      type="button"
-                      id="launch-admin-erp-btn"
-                      onClick={() => {
-                        setIsCustomerAuthOpen(false);
-                        setActiveMode('admin');
-                      }}
-                      className="w-full py-2.5 bg-cyan-400 hover:bg-cyan-300 text-black font-display font-black text-xs uppercase tracking-wider rounded-lg transition-all shadow-lg shadow-cyan-500/20 cursor-pointer flex items-center justify-center gap-2"
-                    >
-                      <span>OPEN ADMIN ERP DASHBOARD</span>
-                      <ArrowRight size={15} />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => logoutAdmin()}
-                      className="w-full py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 hover:text-white font-mono text-xs rounded-lg transition-colors cursor-pointer"
-                    >
-                      Lock Administrator Session
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* Unauthenticated Passcode Form */
-                <form onSubmit={handleAdminSignIn} className="space-y-3">
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-[11px] font-mono">
-                      <label className="text-neutral-300 uppercase">Master Passcode</label>
-                      <span className="text-cyan-400 text-[10px]">Staff Protected</span>
-                    </div>
-                    <div className="relative">
-                      <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-                      <input
-                        id="admin-modal-passcode-input"
-                        type={showAdminPasscode ? 'text' : 'password'}
-                        required
-                        value={adminPasscode}
-                        onChange={(e) => setAdminPasscode(e.target.value)}
-                        placeholder="Enter master admin passcode"
-                        className="w-full pl-9 pr-10 py-2.5 bg-neutral-900 border border-neutral-700 focus:border-cyan-400 rounded-lg text-white font-mono placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 text-xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowAdminPasscode(!showAdminPasscode)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
-                        tabIndex={-1}
-                      >
-                        {showAdminPasscode ? <EyeOff size={15} /> : <Eye size={15} />}
-                      </button>
-                    </div>
-                  </div>
-
+              {/* iPhone Numeric Keypad 3x4 */}
+              <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-[260px] mx-auto pt-1">
+                {IPHONE_KEYPAD_DIGITS.map((key) => (
                   <button
-                    type="submit"
-                    id="admin-verify-btn"
-                    disabled={isAdminSubmitting}
-                    className="w-full py-2.5 bg-cyan-400 hover:bg-cyan-300 text-black font-display font-black text-xs uppercase tracking-wider rounded-lg transition-all shadow-lg shadow-cyan-500/20 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                    key={key.num}
+                    type="button"
+                    onClick={() => handleKeypadPress(key.num)}
+                    disabled={isIphoneUnlocked}
+                    className="w-16 h-16 sm:w-18 sm:h-18 mx-auto rounded-full bg-neutral-900/90 hover:bg-neutral-800 border border-neutral-800 hover:border-cyan-400/40 text-white active:bg-cyan-400 active:text-black flex flex-col items-center justify-center transition-all cursor-pointer shadow select-none disabled:opacity-50"
                   >
-                    <KeyRound size={14} />
-                    <span>{isAdminSubmitting ? 'VERIFYING CREDENTIALS...' : 'UNLOCK & ENTER ADMIN PANEL'}</span>
+                    <span className="text-2xl font-light leading-none">{key.num}</span>
+                    {key.letters && (
+                      <span className="text-[8px] font-mono tracking-widest text-neutral-400 uppercase mt-0.5">
+                        {key.letters}
+                      </span>
+                    )}
                   </button>
-                </form>
-              )}
+                ))}
 
-              <div className="text-center pt-2 border-t border-neutral-800/80">
+                {/* Bottom Row: Cancel, 0, Delete */}
                 <button
                   type="button"
-                  onClick={() => setCustomerAuthTab(currentCustomer ? 'profile' : 'signin')}
-                  className="text-neutral-400 hover:text-white text-xs font-mono underline cursor-pointer"
+                  onClick={() => {
+                    setAdminVerificationStep('none');
+                    setIphonePasscode('');
+                    setIphoneError(null);
+                  }}
+                  className="w-16 h-16 sm:w-18 sm:h-18 mx-auto rounded-full text-xs font-mono text-neutral-400 hover:text-white flex items-center justify-center cursor-pointer select-none transition-colors"
                 >
-                  ← Return to Customer {currentCustomer ? 'Profile' : 'Sign In'}
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleKeypadPress('0')}
+                  disabled={isIphoneUnlocked}
+                  className="w-16 h-16 sm:w-18 sm:h-18 mx-auto rounded-full bg-neutral-900/90 hover:bg-neutral-800 border border-neutral-800 hover:border-cyan-400/40 text-white active:bg-cyan-400 active:text-black flex flex-col items-center justify-center transition-all cursor-pointer shadow select-none disabled:opacity-50"
+                >
+                  <span className="text-2xl font-light leading-none">0</span>
+                  <span className="text-[8px] font-mono text-neutral-400 mt-0.5">+</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleKeypadDelete}
+                  disabled={isIphoneUnlocked}
+                  className="w-16 h-16 sm:w-18 sm:h-18 mx-auto rounded-full text-neutral-400 hover:text-white active:text-rose-400 flex items-center justify-center cursor-pointer select-none transition-colors disabled:opacity-50"
+                  title="Delete digit"
+                >
+                  <Delete size={22} />
+                </button>
+              </div>
+
+              {/* Bottom Return Link */}
+              <div className="text-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAdminVerificationStep('none');
+                    setIphonePasscode('');
+                    setIphoneError(null);
+                  }}
+                  className="text-neutral-500 hover:text-neutral-300 text-xs font-mono underline cursor-pointer"
+                >
+                  ← Return to Customer Sign In
                 </button>
               </div>
             </div>

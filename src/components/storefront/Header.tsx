@@ -31,7 +31,6 @@ export const Header: React.FC<{
     currentCustomer,
     setIsCustomerAuthOpen,
     setCustomerAuthTab,
-    requestAdminAccess,
     isAdminAuthenticated,
     deliverySettings,
   } = useStore();

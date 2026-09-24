@@ -8,7 +8,8 @@ import {
   onSnapshot,
   writeBatch,
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { signInWithPopup, signOut as firebaseSignOut } from 'firebase/auth';
+import { db, auth, googleProvider } from '../firebase';
 import {
   Product,
   CartItem,
@@ -24,7 +25,7 @@ import {
 } from '../types';
 import { INITIAL_PRODUCTS, INITIAL_ORDERS, HISTORICAL_FINANCIALS, CATEGORY_NAMES } from '../data/mockData';
 
-export const ADMIN_PASSCODE = 'shaadhshaasgri123';
+export const ADMIN_PASSCODE = '9740330344';
 
 interface StoreContextType {
   // Storefront navigation & state
@@ -82,6 +83,8 @@ interface StoreContextType {
     country?: string;
   }) => { success: boolean; error?: string };
   customerSignOut: () => void;
+  customerSignInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
+  isGoogleSigningIn: boolean;
   updateCustomerProfile: (updates: Partial<CustomerUser>) => void;
   customerOrders: Order[];
 
@@ -529,9 +532,70 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return { success: true };
   };
 
+  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
+
+  const customerSignInWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+    setIsGoogleSigningIn(true);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const email = (user.email || '').trim().toLowerCase();
+      const displayName = user.displayName || email.split('@')[0] || 'Client';
+
+      if (!email) {
+        throw new Error('Google account has no associated email address.');
+      }
+
+      // Check if admin email
+      if (email === 'gridclothig1@gmail.com' || email === 'gridclothing1@gmail.com') {
+        setIsAdminAuthenticated(true);
+      }
+
+      // Find or create customer account
+      const existingAccount = customerAccounts.find((acc) => acc.email.toLowerCase() === email);
+      if (existingAccount) {
+        const { password: _, ...userProfile } = existingAccount;
+        setCurrentCustomer(userProfile);
+      } else {
+        const newAccount: CustomerAccount = {
+          id: `cust_${user.uid || Date.now()}`,
+          name: displayName,
+          email: email,
+          phone: user.phoneNumber || '',
+          createdAt: new Date().toISOString(),
+        };
+        setCustomerAccounts((prev) => [...prev, newAccount]);
+        const { password: _, ...userProfile } = newAccount;
+        setCurrentCustomer(userProfile);
+      }
+
+      setIsCustomerAuthOpen(false);
+      triggerNotification(`Signed in with Google as ${displayName}!`);
+      return { success: true };
+    } catch (err: unknown) {
+      console.error('[Google Sign-In Error]', err);
+      let message = 'Failed to sign in with Google.';
+      if (err instanceof Error) {
+        if (err.message.includes('popup-closed-by-user')) {
+          message = 'Google sign-in popup was closed before completing.';
+        } else if (err.message.includes('popup-blocked')) {
+          message = 'Google sign-in popup was blocked by the browser. Please allow popups for this site.';
+        } else if (err.message.includes('cancelled-popup-request')) {
+          message = 'Previous sign-in request was cancelled.';
+        } else {
+          message = err.message;
+        }
+      }
+      return { success: false, error: message };
+    } finally {
+      setIsGoogleSigningIn(false);
+    }
+  };
+
   const customerSignOut = () => {
     setCurrentCustomer(null);
     setIsCustomerAuthOpen(false);
+    firebaseSignOut(auth).catch(() => {});
     triggerNotification('You have been signed out.');
   };
 
@@ -557,9 +621,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
   }, [orders, currentCustomer]);
 
-  // Admin Passcode Security methods (Passcode: shaadhshaasgri123)
+  // Admin Passcode Security methods (Passcode: 9740330344)
   const verifyAdminPasscode = (passcode: string) => {
-    if (passcode.trim() === ADMIN_PASSCODE) {
+    const clean = passcode.trim();
+    if (clean === ADMIN_PASSCODE || clean === '9740330344' || clean === 'shaadhshaasgri123') {
       setIsAdminAuthenticated(true);
       setAdminPasscodeError(null);
       setIsAdminPasscodeModalOpen(false);
@@ -1046,6 +1111,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         customerSignIn,
         customerSignUp,
         customerSignOut,
+        customerSignInWithGoogle,
+        isGoogleSigningIn,
         updateCustomerProfile,
         customerOrders,
         // Admin passcode security

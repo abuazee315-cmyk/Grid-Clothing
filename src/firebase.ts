@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialize Firebase App
@@ -7,6 +8,11 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize Firestore with configured database ID
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
+
+// Initialize Firebase Authentication & Google Provider
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 // Test Firestore connection on boot as mandated
 export async function testFirestoreConnection(): Promise<boolean> {

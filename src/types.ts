@@ -16,7 +16,7 @@ export interface CustomerUser {
 }
 
 export interface CustomerAccount extends CustomerUser {
-  password: string; // stored for demo persistence
+  password?: string; // stored for demo persistence or optional for OAuth accounts
 }
 
 export type ProductCategory = 'hoodies' | 'tees' | 'pants' | 'jackets' | 'accessories';

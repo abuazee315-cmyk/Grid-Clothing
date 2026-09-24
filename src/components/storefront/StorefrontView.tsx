@@ -448,15 +448,6 @@ export const StorefrontView: React.FC = () => {
             {currentCustomer ? currentCustomer.name.split(' ')[0] : 'Account'}
           </span>
         </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveMode('admin')}
-          className="flex flex-col items-center gap-1 text-neutral-400 hover:text-white active:text-cyan-400 cursor-pointer min-w-[50px] py-1"
-        >
-          <Package size={18} />
-          <span className="text-[10px] font-mono">Admin</span>
-        </button>
       </nav>
 
       {/* Product Detail Modal */}

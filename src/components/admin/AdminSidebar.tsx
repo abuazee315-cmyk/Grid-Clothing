@@ -16,7 +16,17 @@ import { formatINR } from '../../utils/currency';
 import { GridBrandLogo } from '../common/GridBrandLogo';
 
 export const AdminSidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) => {
-  const { adminTab, setAdminTab, setActiveMode, kpis, orders, logoutAdmin, deliverySettings } = useStore();
+  const {
+    adminTab,
+    setAdminTab,
+    setActiveMode,
+    kpis,
+    orders,
+    logoutAdmin,
+    deliverySettings,
+    firestoreConnected,
+    firestoreDbId,
+  } = useStore();
 
   const navItems = [
     {
@@ -159,11 +169,18 @@ export const AdminSidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate
 
         {/* Server & Environment Status */}
         <div className="px-2 pt-1 flex items-center justify-between text-[10px] font-mono text-neutral-400">
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            SYS: CONNECTED
+          <span
+            className="flex items-center gap-1.5"
+            title={`Connected to Firestore DB: ${firestoreDbId}`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                firestoreConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+              }`}
+            ></span>
+            {firestoreConnected ? 'DB: FIRESTORE LIVE' : 'DB: SYNCING...'}
           </span>
-          <span>v4.2.0</span>
+          <span className="text-[9px] text-neutral-500 font-mono">v4.2.0</span>
         </div>
       </div>
     </aside>

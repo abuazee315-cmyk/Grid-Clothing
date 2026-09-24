@@ -1,5 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import {
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  updateDoc,
+  onSnapshot,
+  writeBatch,
+} from 'firebase/firestore';
+import { db } from '../firebase';
+import {
   Product,
   CartItem,
   Order,
@@ -124,6 +134,8 @@ interface StoreContextType {
   resetStoreData: () => void;
   notification: string | null;
   setNotification: (msg: string | null) => void;
+  firestoreConnected: boolean;
+  firestoreDbId: string;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -334,6 +346,101 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [deliverySettings]);
 
+  // Cloud Firestore Database connection & sync
+  const [firestoreConnected, setFirestoreConnected] = useState<boolean>(false);
+  const firestoreDbId = 'ai-studio-gridclothing-db80b41b-ecc7-4101-b273-7c8c16a94f2a';
+
+  // Firestore Real-Time Sync for Products
+  useEffect(() => {
+    let isInitial = true;
+    const unsub = onSnapshot(
+      collection(db, 'products'),
+      async (snapshot) => {
+        setFirestoreConnected(true);
+        if (snapshot.empty && isInitial) {
+          isInitial = false;
+          try {
+            const batch = writeBatch(db);
+            INITIAL_PRODUCTS.forEach((p) => {
+              const docRef = doc(db, 'products', p.id);
+              batch.set(docRef, p);
+            });
+            await batch.commit();
+          } catch (err) {
+            console.warn('[Firestore] Error seeding initial products:', err);
+          }
+        } else if (!snapshot.empty) {
+          isInitial = false;
+          const items: Product[] = [];
+          snapshot.forEach((d) => {
+            items.push(d.data() as Product);
+          });
+          setProducts(items);
+        }
+      },
+      (error) => {
+        console.warn('[Firestore] Products listener error:', error);
+      }
+    );
+
+    return () => unsub();
+  }, []);
+
+  // Firestore Real-Time Sync for Orders
+  useEffect(() => {
+    let isInitial = true;
+    const unsub = onSnapshot(
+      collection(db, 'orders'),
+      async (snapshot) => {
+        if (snapshot.empty && isInitial) {
+          isInitial = false;
+          try {
+            const batch = writeBatch(db);
+            INITIAL_ORDERS.forEach((o) => {
+              const docRef = doc(db, 'orders', o.id);
+              batch.set(docRef, o);
+            });
+            await batch.commit();
+          } catch (err) {
+            console.warn('[Firestore] Error seeding initial orders:', err);
+          }
+        } else if (!snapshot.empty) {
+          isInitial = false;
+          const items: Order[] = [];
+          snapshot.forEach((d) => {
+            items.push(d.data() as Order);
+          });
+          setOrders(items);
+        }
+      },
+      (error) => {
+        console.warn('[Firestore] Orders listener error:', error);
+      }
+    );
+
+    return () => unsub();
+  }, []);
+
+  // Firestore Sync for Store Delivery Settings
+  useEffect(() => {
+    const unsub = onSnapshot(
+      doc(db, 'settings', 'delivery'),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          setDeliverySettings((prev) => ({
+            ...prev,
+            ...(snapshot.data() as Partial<DeliverySettings>),
+          }));
+        }
+      },
+      (error) => {
+        console.warn('[Firestore] Settings listener error:', error);
+      }
+    );
+
+    return () => unsub();
+  }, []);
+
   // Flash notification helper
   const triggerNotification = (msg: string) => {
     setNotification(msg);
@@ -343,10 +450,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const updateDeliverySettings = (newSettings: Partial<DeliverySettings>) => {
-    setDeliverySettings((prev) => ({
-      ...prev,
-      ...newSettings,
-    }));
+    setDeliverySettings((prev) => {
+      const updated = { ...prev, ...newSettings };
+      setDoc(doc(db, 'settings', 'delivery'), updated, { merge: true }).catch((err) =>
+        console.warn('[Firestore] updateDeliverySettings error:', err)
+      );
+      return updated;
+    });
     triggerNotification('Delivery & shipping fee configuration updated successfully.');
   };
 
@@ -681,6 +791,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setLastPlacedOrder(newOrder);
     clearCart();
 
+    // Persist order to Firestore
+    setDoc(doc(db, 'orders', newOrder.id), newOrder).catch((err) =>
+      console.warn('[Firestore] createOrder sync error:', err)
+    );
+
     triggerNotification(`Order #${orderNum} confirmed! Placed into processing queue.`);
     return newOrder;
   };
@@ -692,6 +807,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id: `prod-${Date.now()}`,
     };
     setProducts((prev) => [newProduct, ...prev]);
+    setDoc(doc(db, 'products', newProduct.id), newProduct).catch((err) =>
+      console.warn('[Firestore] addProduct sync error:', err)
+    );
     triggerNotification(`Product "${newProduct.name}" (${newProduct.sku}) added to catalog.`);
     return newProduct;
   };
@@ -700,16 +818,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setProducts((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
     );
+    updateDoc(doc(db, 'products', id), updates).catch((err) =>
+      console.warn('[Firestore] updateProduct sync error:', err)
+    );
     triggerNotification('Product details updated successfully.');
   };
 
   const deleteProduct = (id: string) => {
     setProducts((prev) => prev.filter((p) => p.id !== id));
+    deleteDoc(doc(db, 'products', id)).catch((err) =>
+      console.warn('[Firestore] deleteProduct sync error:', err)
+    );
     triggerNotification('Product removed from active catalog.');
   };
 
   // Orders fulfillment
   const updateOrderStatus = (orderId: string, status: OrderStatus) => {
+    let updatedDispatchDate: string | undefined;
     setOrders((prev) =>
       prev.map((o) => {
         if (o.id === orderId) {
@@ -718,11 +843,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           if ((status === 'Shipped' || status === 'On the way' || status === 'Delivered') && !updated.dispatchDate) {
             updated.dispatchDate = new Date().toISOString();
           }
+          updatedDispatchDate = updated.dispatchDate;
           return updated;
         }
         return o;
       })
     );
+    updateDoc(doc(db, 'orders', orderId), {
+      status,
+      ...(updatedDispatchDate ? { dispatchDate: updatedDispatchDate } : {}),
+    }).catch((err) => console.warn('[Firestore] updateOrderStatus sync error:', err));
     triggerNotification(`Order status updated to "${status}".`);
   };
 
@@ -742,12 +872,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return o;
       })
     );
+    updateDoc(doc(db, 'orders', orderId), dates).catch((err) =>
+      console.warn('[Firestore] updateOrderDates sync error:', err)
+    );
     triggerNotification('Order timeline dates updated.');
   };
 
   const updateOrder = (orderId: string, updates: Partial<Order>) => {
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, ...updates } : o))
+    );
+    updateDoc(doc(db, 'orders', orderId), updates).catch((err) =>
+      console.warn('[Firestore] updateOrder sync error:', err)
     );
     triggerNotification('Order updated.');
   };
@@ -942,6 +1078,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         resetStoreData,
         notification,
         setNotification,
+        firestoreConnected,
+        firestoreDbId,
       }}
     >
       {children}

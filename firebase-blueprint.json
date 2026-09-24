@@ -2,73 +2,102 @@
   "entities": {
     "Product": {
       "title": "Product",
-      "description": "Streetwear catalog item with inventory and sizing",
+      "description": "Streetwear catalog SKU item",
       "type": "object",
       "properties": {
-        "id": { "type": "string", "maxLength": 128 },
-        "name": { "type": "string", "maxLength": 150 },
-        "category": { "type": "string", "enum": ["all", "hoodies", "tees", "pants", "jackets", "accessories"] },
+        "id": { "type": "string" },
+        "sku": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
         "price": { "type": "number" },
         "costPrice": { "type": "number" },
         "stock": { "type": "number" },
-        "sku": { "type": "string", "maxLength": 64 },
-        "gsm": { "type": "number" },
-        "description": { "type": "string", "maxLength": 2000 },
+        "description": { "type": "string" },
+        "fabricDetails": { "type": "string" },
+        "fitDetails": { "type": "string" },
+        "badge": { "type": "string" },
         "images": { "type": "array" },
         "sizes": { "type": "array" },
         "colors": { "type": "array" },
-        "tags": { "type": "array" },
-        "isActive": { "type": "boolean" },
-        "createdAt": { "type": "string", "maxLength": 64 }
+        "createdAt": { "type": "string" }
       },
-      "required": ["id", "name", "category", "price", "stock", "sku"]
+      "required": ["id", "sku", "name", "category", "price", "stock", "images"]
     },
     "Order": {
       "title": "Order",
-      "description": "Customer purchase order with line items and shipping details",
+      "description": "Customer e-commerce order record",
       "type": "object",
       "properties": {
-        "id": { "type": "string", "maxLength": 128 },
-        "customerName": { "type": "string", "maxLength": 120 },
-        "customerEmail": { "type": "string", "maxLength": 150 },
-        "customerPhone": { "type": "string", "maxLength": 30 },
-        "address": { "type": "string", "maxLength": 500 },
-        "city": { "type": "string", "maxLength": 100 },
-        "postalCode": { "type": "string", "maxLength": 20 },
+        "id": { "type": "string" },
+        "orderNumber": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "shippingAddress": { "type": "object" },
         "items": { "type": "array" },
         "subtotal": { "type": "number" },
+        "discount": { "type": "number" },
         "deliveryFee": { "type": "number" },
+        "tax": { "type": "number" },
         "total": { "type": "number" },
-        "status": { "type": "string", "enum": ["pending", "processing", "shipped", "delivered", "cancelled"] },
-        "createdAt": { "type": "string", "maxLength": 64 }
+        "status": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "estimatedDeliveryDate": { "type": "string" },
+        "dispatchDate": { "type": "string" },
+        "trackingNumber": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" }
       },
-      "required": ["id", "customerName", "customerEmail", "address", "city", "postalCode", "items", "total", "status"]
+      "required": ["id", "orderNumber", "customerName", "customerEmail", "items", "total", "status", "createdAt"]
     },
-    "DeliverySettings": {
-      "title": "DeliverySettings",
-      "description": "Store shipping and delivery fee thresholds",
+    "StoreSettings": {
+      "title": "StoreSettings",
+      "description": "Store configuration and delivery thresholds",
       "type": "object",
       "properties": {
-        "deliveryFee": { "type": "number" },
         "isFreeDelivery": { "type": "boolean" },
+        "deliveryFee": { "type": "number" },
         "enableFreeDeliveryThreshold": { "type": "boolean" },
-        "freeDeliveryThreshold": { "type": "number" }
+        "freeDeliveryThreshold": { "type": "number" },
+        "expressCourierName": { "type": "string" },
+        "storeUrl": { "type": "string" },
+        "supportEmail": { "type": "string" }
       },
-      "required": ["deliveryFee", "isFreeDelivery"]
+      "required": ["isFreeDelivery", "deliveryFee"]
+    },
+    "CustomerAccount": {
+      "title": "CustomerAccount",
+      "description": "Customer registered profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "password": { "type": "string" },
+        "phone": { "type": "string" },
+        "savedAddress": { "type": "object" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "email"]
     }
   },
   "firestore": {
     "/products/{productId}": {
       "schema": "Product",
-      "description": "Public catalog products viewable by customers and manageable by admin"
+      "description": "Global storefront products and inventory records"
     },
     "/orders/{orderId}": {
       "schema": "Order",
-      "description": "Orders submitted during checkout and reviewed in admin order hub"
+      "description": "Customer orders and fulfillment details"
     },
-    "/deliverySettings/{settingsId}": {
-      "schema": "DeliverySettings",
-      "description": "Global store delivery calculation configuration"
+    "/settings/{settingId}": {
+      "schema": "StoreSettings",
+      "description": "Store operational settings and delivery fees"
+    },
+    "/customers/{customerId}": {
+      "schema": "CustomerAccount",
+      "description": "Client profile records and saved shipping addresses"
     }
   }
 }

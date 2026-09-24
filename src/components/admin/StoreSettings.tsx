@@ -23,6 +23,8 @@ export const StoreSettings: React.FC = () => {
     orders,
     deliverySettings,
     updateDeliverySettings,
+    firestoreConnected,
+    firestoreDbId,
   } = useStore();
 
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -631,6 +633,55 @@ export const StoreSettings: React.FC = () => {
               <span className="text-[10px] text-cyan-400 block">SECONDARY NODE (SOUTH REGION)</span>
               <p className="font-bold text-white mt-1">{storeMeta.dispatchHubSecondary}</p>
               <p className="text-neutral-400 text-[11px]">Direct express dispatch across Bengaluru, Chennai & Hyderabad</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* CLOUD DATABASE STATUS (FIRESTORE) */}
+        {/* ========================================================================= */}
+        <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-5 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
+            <div className="flex items-center gap-2 text-white">
+              <Database size={16} className="text-cyan-400" />
+              <h3 className="font-display font-bold text-sm uppercase">Cloud Database (Google Firestore)</h3>
+            </div>
+            <span
+              className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded flex items-center gap-1.5 ${
+                firestoreConnected
+                  ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+                  : 'bg-amber-500/10 border border-amber-500/30 text-amber-400'
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  firestoreConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                }`}
+              />
+              {firestoreConnected ? 'ACTIVE & CONNECTED' : 'INITIALIZING'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-3 bg-neutral-950 rounded border border-neutral-800 font-mono text-xs">
+              <span className="text-[10px] text-neutral-400 uppercase block">Database ID</span>
+              <p className="text-cyan-400 font-bold mt-1 break-all">{firestoreDbId}</p>
+              <p className="text-neutral-500 text-[10px] mt-1">Multi-region NoSQL persistent cluster</p>
+            </div>
+            <div className="p-3 bg-neutral-950 rounded border border-neutral-800 font-mono text-xs">
+              <span className="text-[10px] text-neutral-400 uppercase block">Synchronized Collections</span>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <span className="px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-700 text-neutral-300 text-[11px]">
+                  products ({products.length})
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-700 text-neutral-300 text-[11px]">
+                  orders ({orders.length})
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-700 text-neutral-300 text-[11px]">
+                  settings
+                </span>
+              </div>
+              <p className="text-neutral-500 text-[10px] mt-1.5">Real-time bi-directional streaming</p>
             </div>
           </div>
         </div>

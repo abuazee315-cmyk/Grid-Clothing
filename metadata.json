@@ -1,0 +1,6 @@
+{
+  "name": "GRID CLOTHING",
+  "description": "Classic Form. Premium Feel. Modern, premium streetwear e-commerce platform featuring mobile-optimized product browsing, size/color variant selectors, slide-over cart, multi-step checkout, and an admin suite with inventory control and financial profit analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

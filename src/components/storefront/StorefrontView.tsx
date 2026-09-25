@@ -12,6 +12,9 @@ import {
   ShoppingBag,
   User,
   Shield,
+  LayoutGrid,
+  Columns2,
+  Rows3,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { Header } from './Header';
@@ -44,6 +47,8 @@ export const StorefrontView: React.FC = () => {
   } = useStore();
 
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  // Mobile grid layout: 2-col (compact double) or 1-col (large single)
+  const [gridDensity, setGridDensity] = useState<'1-col' | '2-col'>('2-col');
 
   // Faceted filter state
   const [filters, setFilters] = useState<{
@@ -178,23 +183,49 @@ export const StorefrontView: React.FC = () => {
             </h2>
           </div>
 
-          {/* Sort By & Mobile Filter Trigger */}
-          <div className="flex items-center gap-3">
+          {/* Sort By, Mobile Filter Trigger & Mobile Grid Density Toggle */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Mobile Grid Density Toggle: 1-col vs 2-col */}
+            <div className="sm:hidden flex items-center bg-neutral-900 border border-neutral-800 rounded-md p-0.5">
+              <button
+                type="button"
+                onClick={() => setGridDensity('2-col')}
+                className={`p-1.5 rounded transition-colors ${
+                  gridDensity === '2-col' ? 'bg-cyan-400 text-black' : 'text-neutral-400 hover:text-white'
+                }`}
+                title="2-Column Grid View"
+                aria-label="2-Column Grid View"
+              >
+                <Columns2 size={15} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setGridDensity('1-col')}
+                className={`p-1.5 rounded transition-colors ${
+                  gridDensity === '1-col' ? 'bg-cyan-400 text-black' : 'text-neutral-400 hover:text-white'
+                }`}
+                title="Single Column Detailed View"
+                aria-label="Single Column Detailed View"
+              >
+                <Rows3 size={15} />
+              </button>
+            </div>
+
             <button
               onClick={() => setMobileFilterOpen(true)}
-              className="lg:hidden px-3.5 py-2 bg-neutral-900 border border-neutral-800 rounded-md text-xs font-mono text-neutral-300 hover:text-white flex items-center gap-2"
+              className="lg:hidden px-2.5 sm:px-3.5 py-2 bg-neutral-900 border border-neutral-800 rounded-md text-xs font-mono text-neutral-300 hover:text-white flex items-center gap-1.5 sm:gap-2 min-h-[38px]"
             >
               <SlidersHorizontal size={14} className="text-cyan-400" />
               <span>Filters ({filters.sizes.length + filters.colors.length + (filters.inStockOnly ? 1 : 0)})</span>
             </button>
 
-            <div className="flex items-center gap-2 bg-neutral-900 border border-neutral-800 rounded-md px-3 py-1.5 text-xs font-mono">
+            <div className="flex items-center gap-2 bg-neutral-900 border border-neutral-800 rounded-md px-2.5 sm:px-3 py-1.5 text-xs font-mono min-h-[38px]">
               <ArrowUpDown size={13} className="text-neutral-500" />
               <span className="text-neutral-400 hidden sm:inline">SORT:</span>
               <select
                 value={filters.sortBy}
                 onChange={(e) => setFilters({ ...filters, sortBy: e.target.value as any })}
-                className="bg-transparent text-white font-medium focus:outline-none cursor-pointer"
+                className="bg-transparent text-white font-medium focus:outline-none cursor-pointer text-xs"
               >
                 <option value="featured" className="bg-neutral-900 text-white">Featured Architecture</option>
                 <option value="price-asc" className="bg-neutral-900 text-white">Price: Low to High</option>
@@ -218,10 +249,16 @@ export const StorefrontView: React.FC = () => {
             />
           </div>
 
-          {/* Products Grid */}
+          {/* Products Grid - Dynamic 1-col or 2-col on Mobile, 2-col on Tablet, 3-col on Desktop */}
           <div className="lg:col-span-9">
             {filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              <div
+                className={
+                  gridDensity === '2-col'
+                    ? 'grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-6'
+                    : 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6'
+                }
+              >
                 {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}

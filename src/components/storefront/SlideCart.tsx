@@ -69,11 +69,11 @@ export const SlideCart: React.FC = () => {
         onClick={() => setIsCartOpen(false)}
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-2 sm:pl-10">
-        <div className="w-screen max-w-md bg-neutral-950 border-l border-neutral-800 text-white flex flex-col shadow-2xl">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10">
+        <div className="w-screen sm:max-w-md bg-neutral-950 sm:border-l border-neutral-800 text-white flex flex-col shadow-2xl h-full">
           
           {/* Header */}
-          <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between">
+          <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between safe-area-pt">
             <div className="flex items-center gap-2">
               <ShoppingBag size={18} className="text-cyan-400" />
               <h2 className="font-display font-black text-base uppercase tracking-wider text-white">
@@ -82,7 +82,8 @@ export const SlideCart: React.FC = () => {
             </div>
             <button
               onClick={() => setIsCartOpen(false)}
-              className="p-2 text-neutral-400 hover:text-white hover:bg-neutral-900 rounded-md transition-colors"
+              className="p-2 text-neutral-400 hover:text-white hover:bg-neutral-900 rounded-md transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
+              aria-label="Close Bag"
             >
               <X size={18} />
             </button>
@@ -213,7 +214,7 @@ export const SlideCart: React.FC = () => {
 
           {/* Footer with Summary & Checkout */}
           {cart.length > 0 && (
-            <div className="p-4 sm:p-5 border-t border-neutral-800 bg-neutral-950 space-y-4">
+            <div className="p-4 sm:p-5 border-t border-neutral-800 bg-neutral-950 space-y-4 safe-area-pb">
               {/* Promo Code Box */}
               <div className="space-y-1">
                 {promoCode ? (
@@ -224,7 +225,7 @@ export const SlideCart: React.FC = () => {
                     </span>
                     <button
                       onClick={removePromoCode}
-                      className="text-neutral-400 hover:text-white text-[11px] underline"
+                      className="text-neutral-400 hover:text-white text-[11px] underline min-h-[36px] flex items-center"
                     >
                       Remove
                     </button>
@@ -236,11 +237,11 @@ export const SlideCart: React.FC = () => {
                       placeholder="Promo Code (e.g. GRID10)"
                       value={couponInput}
                       onChange={(e) => setCouponInput(e.target.value)}
-                      className="flex-1 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-xs font-mono text-white placeholder-neutral-500 focus:outline-none focus:border-cyan-400 uppercase"
+                      className="flex-1 px-3 py-2 bg-neutral-900 border border-neutral-800 rounded text-xs font-mono text-white placeholder-neutral-500 focus:outline-none focus:border-cyan-400 uppercase min-h-[42px]"
                     />
                     <button
                       type="submit"
-                      className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-xs font-mono font-bold rounded text-white transition-colors"
+                      className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-xs font-mono font-bold rounded text-white transition-colors min-h-[42px] cursor-pointer"
                     >
                       Apply
                     </button>
@@ -285,7 +286,7 @@ export const SlideCart: React.FC = () => {
               <button
                 id="cart-proceed-checkout-btn"
                 onClick={handleProceedToCheckout}
-                className="w-full py-3.5 bg-white hover:bg-cyan-400 text-black font-display font-black text-xs uppercase tracking-wider rounded transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+                className="w-full py-4 bg-white active:bg-cyan-400 text-black font-display font-black text-xs uppercase tracking-wider rounded transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg min-h-[48px]"
               >
                 <span>PROCEED TO CHECKOUT</span>
                 <ArrowRight size={15} />

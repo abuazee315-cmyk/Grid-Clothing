@@ -188,7 +188,7 @@ export const AdminView: React.FC = () => {
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col lg:flex-row selection:bg-cyan-400 selection:text-black">
       {/* Mobile Admin Top Navigation Bar */}
-      <div className="lg:hidden p-4 bg-neutral-950 border-b border-neutral-800 flex items-center justify-between sticky top-0 z-40">
+      <div className="lg:hidden p-4 bg-neutral-950 border-b border-neutral-800 flex items-center justify-between sticky top-0 z-40 safe-area-pt">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}

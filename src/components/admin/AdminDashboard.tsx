@@ -40,7 +40,7 @@ export const AdminDashboard: React.FC = () => {
   const fulfillmentStatuses: OrderStatus[] = ['Processing', 'Shipped', 'On the way', 'Delivered'];
 
   return (
-    <div className="p-6 sm:p-8 space-y-8 max-w-7xl mx-auto text-white">
+    <div className="p-4 sm:p-8 space-y-6 sm:space-y-8 max-w-7xl mx-auto text-white">
       {/* Top Title Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-neutral-800 gap-4">
         <div>
@@ -60,6 +60,13 @@ export const AdminDashboard: React.FC = () => {
           >
             <Plus size={14} className="text-cyan-400" />
             <span>Add Product</span>
+          </button>
+          <button
+            onClick={() => setAdminTab('orders')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-cyan-400 rounded text-xs font-mono text-white transition-colors cursor-pointer"
+          >
+            <Plus size={14} className="text-cyan-400" />
+            <span>Add Order</span>
           </button>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-xs font-mono text-neutral-300">
             <Calendar size={14} className="text-cyan-400" />

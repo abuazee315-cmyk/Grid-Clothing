@@ -294,14 +294,14 @@ export const CustomerAuthModal: React.FC = () => {
     .reduce((sum, o) => sum + o.total, 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
       {/* Backdrop */}
       <div className="fixed inset-0" onClick={() => setIsCustomerAuthOpen(false)} />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-lg bg-neutral-950 border border-neutral-800 rounded-xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]">
+      <div className="relative w-full h-full sm:h-auto sm:max-h-[90vh] max-w-lg bg-neutral-950 sm:border border-neutral-800 sm:rounded-xl shadow-2xl overflow-hidden z-10 flex flex-col my-0 sm:my-auto">
         {/* Header with Brand & Close Button */}
-        <div className="px-5 py-4 bg-neutral-900/90 border-b border-neutral-800 flex items-center justify-between">
+        <div className="px-4 sm:px-5 py-3.5 sm:py-4 bg-neutral-900/90 border-b border-neutral-800 flex items-center justify-between safe-area-pt">
           <div className="flex items-center gap-2.5">
             <div className="w-6 h-6 bg-white text-black font-display font-black flex items-center justify-center text-xs">
               G
@@ -322,7 +322,7 @@ export const CustomerAuthModal: React.FC = () => {
               setIphonePasscode('');
               setIphoneError(null);
             }}
-            className="p-1 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer"
+            className="p-2 rounded text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer min-h-[40px] min-w-[40px] flex items-center justify-center"
             title="Close"
           >
             <X size={18} />
@@ -337,7 +337,7 @@ export const CustomerAuthModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setCustomerAuthTab('signin')}
-                  className={`flex-1 py-3 text-center transition-all font-bold cursor-pointer ${
+                  className={`flex-1 py-3 text-center transition-all font-bold cursor-pointer min-h-[44px] ${
                     customerAuthTab === 'signin'
                       ? 'text-cyan-400 border-b-2 border-cyan-400 bg-neutral-900/80'
                       : 'text-neutral-400 hover:text-white hover:bg-neutral-900/40'
@@ -348,7 +348,7 @@ export const CustomerAuthModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setCustomerAuthTab('signup')}
-                  className={`flex-1 py-3 text-center transition-all font-bold cursor-pointer ${
+                  className={`flex-1 py-3 text-center transition-all font-bold cursor-pointer min-h-[44px] ${
                     customerAuthTab === 'signup'
                       ? 'text-cyan-400 border-b-2 border-cyan-400 bg-neutral-900/80'
                       : 'text-neutral-400 hover:text-white hover:bg-neutral-900/40'
@@ -362,7 +362,7 @@ export const CustomerAuthModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setCustomerAuthTab('profile')}
-                  className={`flex-1 py-3 text-center transition-all font-bold cursor-pointer ${
+                  className={`flex-1 py-3 text-center transition-all font-bold cursor-pointer min-h-[44px] ${
                     customerAuthTab === 'profile'
                       ? 'text-cyan-400 border-b-2 border-cyan-400 bg-neutral-900/80'
                       : 'text-neutral-400 hover:text-white hover:bg-neutral-900/40'
@@ -373,7 +373,7 @@ export const CustomerAuthModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setCustomerAuthTab('orders')}
-                  className={`flex-1 py-3 text-center transition-all font-bold cursor-pointer flex items-center justify-center gap-1.5 ${
+                  className={`flex-1 py-3 text-center transition-all font-bold cursor-pointer flex items-center justify-center gap-1.5 min-h-[44px] ${
                     customerAuthTab === 'orders'
                       ? 'text-cyan-400 border-b-2 border-cyan-400 bg-neutral-900/80'
                       : 'text-neutral-400 hover:text-white hover:bg-neutral-900/40'
@@ -390,7 +390,7 @@ export const CustomerAuthModal: React.FC = () => {
         )}
 
         {/* Scrollable Content Body */}
-        <div className="p-6 overflow-y-auto space-y-4 text-xs">
+        <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 text-xs touch-scroll safe-area-pb">
           {/* ================= SIGN IN TAB ================= */}
           {adminVerificationStep === 'none' && !currentCustomer && customerAuthTab === 'signin' && (
             <div className="space-y-4">
@@ -460,11 +460,12 @@ export const CustomerAuthModal: React.FC = () => {
                     <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                     <input
                       type="email"
+                      inputMode="email"
                       required
                       value={signInEmail}
                       onChange={(e) => setSignInEmail(e.target.value)}
                       placeholder="client@domain.com"
-                      className="w-full pl-9 pr-3 py-2 bg-neutral-900 border border-neutral-700 focus:border-cyan-400 rounded-lg text-white font-mono placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                      className="w-full pl-9 pr-3 py-2.5 bg-neutral-900 border border-neutral-700 focus:border-cyan-400 rounded-lg text-white text-base sm:text-xs font-mono placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 min-h-[44px]"
                     />
                   </div>
                 </div>
@@ -481,12 +482,12 @@ export const CustomerAuthModal: React.FC = () => {
                       value={signInPassword}
                       onChange={(e) => setSignInPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full pl-9 pr-10 py-2 bg-neutral-900 border border-neutral-700 focus:border-cyan-400 rounded-lg text-white font-mono placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                      className="w-full pl-9 pr-10 py-2.5 bg-neutral-900 border border-neutral-700 focus:border-cyan-400 rounded-lg text-white text-base sm:text-xs font-mono placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 min-h-[44px]"
                     />
                     <button
                       type="button"
                       onClick={() => setShowSignInPassword(!showSignInPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1"
                       tabIndex={-1}
                     >
                       {showSignInPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -496,7 +497,7 @@ export const CustomerAuthModal: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-cyan-400 hover:bg-cyan-300 text-black font-display font-black text-xs uppercase tracking-wider rounded-lg transition-all shadow-lg shadow-cyan-500/20 cursor-pointer"
+                  className="w-full py-3 bg-cyan-400 hover:bg-cyan-300 text-black font-display font-black text-xs uppercase tracking-wider rounded-lg transition-all shadow-lg shadow-cyan-500/20 cursor-pointer min-h-[46px]"
                 >
                   SIGN IN TO ACCOUNT
                 </button>
@@ -587,7 +588,7 @@ export const CustomerAuthModal: React.FC = () => {
                       value={signUpName}
                       onChange={(e) => setSignUpName(e.target.value)}
                       placeholder="e.g. Arjun Mehta"
-                      className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 focus:border-cyan-400 rounded-lg text-white font-mono placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                      className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 focus:border-cyan-400 rounded-lg text-white text-base sm:text-xs font-mono placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 min-h-[44px]"
                     />
                   </div>
 
@@ -595,10 +596,11 @@ export const CustomerAuthModal: React.FC = () => {
                     <label className="text-neutral-300 font-mono text-[11px] uppercase">Phone Number</label>
                     <input
                       type="tel"
+                      inputMode="tel"
                       value={signUpPhone}
                       onChange={(e) => setSignUpPhone(e.target.value)}
                       placeholder="+91 98765 43210"
-                      className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 focus:border-cyan-400 rounded-lg text-white font-mono placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                      className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 focus:border-cyan-400 rounded-lg text-white text-base sm:text-xs font-mono placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 min-h-[44px]"
                     />
                   </div>
                 </div>
@@ -607,11 +609,12 @@ export const CustomerAuthModal: React.FC = () => {
                   <label className="text-neutral-300 font-mono text-[11px] uppercase">Email Address *</label>
                   <input
                     type="email"
+                    inputMode="email"
                     required
                     value={signUpEmail}
                     onChange={(e) => setSignUpEmail(e.target.value)}
                     placeholder="arjun@domain.com"
-                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 focus:border-cyan-400 rounded-lg text-white font-mono placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 focus:border-cyan-400 rounded-lg text-white text-base sm:text-xs font-mono placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 min-h-[44px]"
                   />
                 </div>
 
@@ -624,12 +627,12 @@ export const CustomerAuthModal: React.FC = () => {
                       value={signUpPassword}
                       onChange={(e) => setSignUpPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full pl-3 pr-10 py-2 bg-neutral-900 border border-neutral-700 focus:border-cyan-400 rounded-lg text-white font-mono placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+                      className="w-full pl-3 pr-10 py-2 bg-neutral-900 border border-neutral-700 focus:border-cyan-400 rounded-lg text-white text-base sm:text-xs font-mono placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 min-h-[44px]"
                     />
                     <button
                       type="button"
                       onClick={() => setShowSignUpPassword(!showSignUpPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1"
                       tabIndex={-1}
                     >
                       {showSignUpPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -649,7 +652,7 @@ export const CustomerAuthModal: React.FC = () => {
                     value={signUpStreet}
                     onChange={(e) => setSignUpStreet(e.target.value)}
                     placeholder="Street Address, Apt / Suite"
-                    className="w-full px-3 py-1.5 bg-neutral-900 border border-neutral-800 focus:border-cyan-400 rounded-lg text-white font-mono placeholder-neutral-500"
+                    className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 focus:border-cyan-400 rounded-lg text-white text-base sm:text-xs font-mono placeholder-neutral-500 min-h-[42px]"
                   />
 
                   <div className="grid grid-cols-3 gap-2">
@@ -658,28 +661,29 @@ export const CustomerAuthModal: React.FC = () => {
                       value={signUpCity}
                       onChange={(e) => setSignUpCity(e.target.value)}
                       placeholder="City"
-                      className="px-3 py-1.5 bg-neutral-900 border border-neutral-800 focus:border-cyan-400 rounded-lg text-white font-mono placeholder-neutral-500"
+                      className="px-2.5 py-2 bg-neutral-900 border border-neutral-800 focus:border-cyan-400 rounded-lg text-white text-base sm:text-xs font-mono placeholder-neutral-500 min-h-[42px]"
                     />
                     <input
                       type="text"
                       value={signUpState}
                       onChange={(e) => setSignUpState(e.target.value)}
                       placeholder="State"
-                      className="px-3 py-1.5 bg-neutral-900 border border-neutral-800 focus:border-cyan-400 rounded-lg text-white font-mono placeholder-neutral-500"
+                      className="px-2.5 py-2 bg-neutral-900 border border-neutral-800 focus:border-cyan-400 rounded-lg text-white text-base sm:text-xs font-mono placeholder-neutral-500 min-h-[42px]"
                     />
                     <input
                       type="text"
+                      inputMode="numeric"
                       value={signUpZip}
                       onChange={(e) => setSignUpZip(e.target.value)}
                       placeholder="PIN / Zip"
-                      className="px-3 py-1.5 bg-neutral-900 border border-neutral-800 focus:border-cyan-400 rounded-lg text-white font-mono placeholder-neutral-500"
+                      className="px-2.5 py-2 bg-neutral-900 border border-neutral-800 focus:border-cyan-400 rounded-lg text-white text-base sm:text-xs font-mono placeholder-neutral-500 min-h-[42px]"
                     />
                   </div>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-cyan-400 hover:bg-cyan-300 text-black font-display font-black text-xs uppercase tracking-wider rounded-lg transition-all shadow-lg shadow-cyan-500/20 cursor-pointer mt-2"
+                  className="w-full py-3 bg-cyan-400 hover:bg-cyan-300 text-black font-display font-black text-xs uppercase tracking-wider rounded-lg transition-all shadow-lg shadow-cyan-500/20 cursor-pointer mt-2 min-h-[46px]"
                 >
                   CREATE ACCOUNT & SIGN IN
                 </button>

@@ -26,6 +26,7 @@ import {
 import { useStore } from '../../context/StoreContext';
 import { Product, ProductCategory, ProductSize } from '../../types';
 import { formatINR } from '../../utils/currency';
+import { WorldColorSearchPicker } from './WorldColorSearchPicker';
 
 // Curated 4-Photo Photoshoot Packs for Streetwear E-Commerce (Front, Back, Detail, Lifestyle)
 export interface CuratedPhotoPack {
@@ -675,7 +676,7 @@ export const InventoryManagement: React.FC = () => {
 
       {/* Add / Edit Product Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
           <div
             className="fixed inset-0 bg-black/85 backdrop-blur-xs"
             onClick={() => {
@@ -684,8 +685,8 @@ export const InventoryManagement: React.FC = () => {
             }}
           />
 
-          <div className="relative w-full max-w-4xl bg-neutral-950 border border-neutral-800 rounded-xl shadow-2xl z-10 overflow-hidden text-white flex flex-col max-h-[90vh]">
-            <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-900/70">
+          <div className="relative w-full h-full sm:h-auto sm:max-h-[90vh] max-w-4xl bg-neutral-950 sm:border border-neutral-800 sm:rounded-xl shadow-2xl z-10 overflow-hidden text-white flex flex-col my-0 sm:my-auto">
+            <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-900/70 safe-area-pt">
               <div className="flex items-center gap-2.5">
                 <Package size={18} className="text-cyan-400" />
                 <h3 className="font-display font-bold text-base uppercase text-white tracking-wide">
@@ -697,13 +698,13 @@ export const InventoryManagement: React.FC = () => {
                   setIsAddModalOpen(false);
                   setEditingProduct(null);
                 }}
-                className="p-1.5 text-neutral-400 hover:text-white rounded hover:bg-neutral-800 cursor-pointer"
+                className="p-1.5 text-neutral-400 hover:text-white rounded hover:bg-neutral-800 cursor-pointer min-h-[38px] min-w-[38px] flex items-center justify-center"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveProduct} className="p-5 space-y-5 overflow-y-auto text-xs font-mono">
+            <form onSubmit={handleSaveProduct} className="flex-1 p-4 sm:p-5 space-y-5 overflow-y-auto text-xs font-mono touch-scroll safe-area-pb">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 {/* Left Column: Form Fields */}
                 <div className="lg:col-span-7 space-y-4">
@@ -858,33 +859,12 @@ export const InventoryManagement: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Colors Selection */}
-                  <div className="space-y-1.5">
-                    <label className="text-neutral-400 uppercase text-[10px] font-bold">Colorways</label>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {COLOR_PRESETS.map((c) => {
-                        const isSelected = formData.selectedColors.some((item) => item.name === c.name);
-                        return (
-                          <button
-                            key={c.name}
-                            type="button"
-                            onClick={() => toggleColor(c)}
-                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] border transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-neutral-800 text-white border-cyan-400'
-                                : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:border-neutral-700'
-                            }`}
-                          >
-                            <span
-                              className="w-3 h-3 rounded-full border border-neutral-600 shrink-0"
-                              style={{ backgroundColor: c.hex }}
-                            />
-                            <span>{c.name}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  {/* World Colors Selection & Search */}
+                  <WorldColorSearchPicker
+                    selectedColors={formData.selectedColors}
+                    onToggleColor={toggleColor}
+                    label="COLORWAYS (SEARCH ANY COLOR IN THE WORLD)"
+                  />
 
                   {/* Fabric & Fit Details */}
                   <div className="space-y-2">

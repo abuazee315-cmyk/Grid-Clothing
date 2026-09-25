@@ -118,53 +118,56 @@ export const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
       </div>
 
       {/* Information Details */}
-      <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+      <div className="p-3 sm:p-4 flex-1 flex flex-col justify-between space-y-2 sm:space-y-3">
         <div>
           {/* Category & SKU */}
-          <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400">
-            <span className="uppercase tracking-wider">{product.category}</span>
-            <div className="flex items-center gap-1 text-amber-400">
-              <Star size={11} fill="currentColor" />
+          <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-neutral-400">
+            <span className="uppercase tracking-wider truncate mr-1">{product.category}</span>
+            <div className="flex items-center gap-1 text-amber-400 shrink-0">
+              <Star size={10} fill="currentColor" />
               <span className="text-white font-bold">{product.rating}</span>
-              <span className="text-neutral-400">({product.reviewsCount})</span>
+              <span className="text-neutral-400 hidden xs:inline">({product.reviewsCount})</span>
             </div>
           </div>
 
           {/* Product Title */}
           <h3
             onClick={() => setSelectedProduct(product)}
-            className="font-display font-bold text-sm text-white hover:text-cyan-400 transition-colors cursor-pointer mt-1 line-clamp-1"
+            className="font-display font-bold text-xs sm:text-sm text-white hover:text-cyan-400 transition-colors cursor-pointer mt-1 line-clamp-1"
           >
             {product.name}
           </h3>
 
-          <p className="text-[11px] text-neutral-400 font-mono mt-0.5 line-clamp-1">
+          <p className="text-[10px] sm:text-[11px] text-neutral-400 font-mono mt-0.5 line-clamp-1">
             {product.fabricDetails}
           </p>
         </div>
 
         {/* Sizes preview */}
-        <div className="flex items-center gap-1">
-          <span className="text-[10px] font-mono text-neutral-400 uppercase mr-1">SIZES:</span>
-          {product.sizes.map((s) => (
+        <div className="flex items-center gap-1 overflow-hidden">
+          <span className="text-[9px] sm:text-[10px] font-mono text-neutral-400 uppercase mr-0.5 shrink-0">SIZES:</span>
+          {product.sizes.slice(0, 4).map((s) => (
             <span
               key={s}
-              className="text-[10px] font-mono px-1 py-0.5 bg-neutral-800/80 text-neutral-300 rounded"
+              className="text-[9px] sm:text-[10px] font-mono px-1 py-0.5 bg-neutral-800/80 text-neutral-300 rounded shrink-0"
             >
               {s}
             </span>
           ))}
+          {product.sizes.length > 4 && (
+            <span className="text-[9px] font-mono text-neutral-500">+{product.sizes.length - 4}</span>
+          )}
         </div>
 
         {/* Bottom price and color swatches */}
-        <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between">
+        <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between gap-1">
           <div>
-            <span className="text-base font-extrabold font-mono text-white">{formatINR(product.price)}</span>
+            <span className="text-sm sm:text-base font-extrabold font-mono text-white">{formatINR(product.price)}</span>
           </div>
 
           {/* Color swatches */}
-          <div className="flex items-center gap-1.5">
-            {product.colors.map((color, idx) => (
+          <div className="flex items-center gap-1 shrink-0">
+            {product.colors.slice(0, 4).map((color, idx) => (
               <button
                 key={color.name}
                 onClick={(e) => {
@@ -172,7 +175,7 @@ export const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
                   setSelectedColorIndex(idx);
                 }}
                 title={color.name}
-                className={`w-4 h-4 sm:w-3.5 sm:h-3.5 rounded-full border transition-transform cursor-pointer ${
+                className={`w-3.5 h-3.5 sm:w-3.5 sm:h-3.5 rounded-full border transition-transform cursor-pointer ${
                   selectedColorIndex === idx
                     ? 'border-cyan-400 scale-125 ring-1 ring-cyan-400/40'
                     : 'border-neutral-700 hover:scale-110'
@@ -184,20 +187,20 @@ export const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
         </div>
 
         {/* Mobile Dedicated Touch Action Buttons (Accessible on touch screens without hover) */}
-        <div className="md:hidden pt-2 flex items-center gap-2">
+        <div className="md:hidden pt-1.5 flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => setSelectedProduct(product)}
-            className="flex-1 py-2 bg-neutral-900 active:bg-cyan-400 active:text-black border border-neutral-800 rounded text-[11px] font-mono font-medium text-neutral-200 flex items-center justify-center gap-1.5 transition-colors min-h-[38px] cursor-pointer"
+            className="flex-1 py-1.5 bg-neutral-900 active:bg-cyan-400 active:text-black border border-neutral-800 rounded text-[10px] sm:text-[11px] font-mono font-medium text-neutral-200 flex items-center justify-center gap-1 transition-colors min-h-[36px] cursor-pointer"
           >
             <Eye size={12} />
-            <span>Select Size</span>
+            <span className="truncate">View</span>
           </button>
           <button
             type="button"
             onClick={handleQuickAdd}
             disabled={product.stock <= 0}
-            className="px-3.5 py-2 bg-white active:bg-cyan-400 text-black rounded text-[11px] font-mono font-bold flex items-center justify-center gap-1 transition-colors disabled:opacity-40 min-h-[38px] cursor-pointer"
+            className="px-2.5 sm:px-3 py-1.5 bg-white active:bg-cyan-400 text-black rounded text-[10px] sm:text-[11px] font-mono font-bold flex items-center justify-center gap-1 transition-colors disabled:opacity-40 min-h-[36px] cursor-pointer shrink-0"
             title="Quick Add to Bag"
           >
             <ShoppingBag size={12} />

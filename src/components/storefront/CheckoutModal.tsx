@@ -17,6 +17,9 @@ import {
   Tag,
   Zap,
   Printer,
+  Banknote,
+  Smartphone,
+  QrCode,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useStore } from '../../context/StoreContext';
@@ -57,10 +60,8 @@ export const CheckoutModal: React.FC = () => {
     state: 'Maharashtra',
     zip: '400018',
     country: 'India',
-    paymentMethod: 'card', // card, apple_pay, klarna
-    cardNumber: '4242 •••• •••• 4242',
-    cardExpiry: '10/28',
-    cardCvc: '889',
+    paymentMethod: 'cod', // 'cod' (Cash on delivery) or 'gpay' (Google Pay)
+    gpayUpiId: 'arjun@okhdfcbank',
   });
 
   // Prepopulate customer details if logged in
@@ -91,11 +92,9 @@ export const CheckoutModal: React.FC = () => {
 
   const handlePlaceOrder = () => {
     const paymentLabel =
-      formData.paymentMethod === 'apple_pay'
-        ? 'Apple Pay'
-        : formData.paymentMethod === 'klarna'
-        ? 'Klarna (4x interest-free)'
-        : 'Credit Card (•••• 4242)';
+      formData.paymentMethod === 'gpay'
+        ? (formData.gpayUpiId && formData.gpayUpiId.trim() ? `Google Pay (${formData.gpayUpiId.trim()})` : 'Google Pay (GPay UPI)')
+        : 'Cash on delivery (COD)';
 
     const shippingMethodLabel =
       cartShipping === 0
@@ -140,7 +139,7 @@ export const CheckoutModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/85 backdrop-blur-md"
@@ -150,10 +149,10 @@ export const CheckoutModal: React.FC = () => {
       />
 
       {/* Main Checkout Modal */}
-      <div className="relative w-full max-w-3xl bg-neutral-950 border border-neutral-800 rounded-xl shadow-2xl overflow-hidden z-10 my-auto text-white">
+      <div className="relative w-full h-full sm:h-auto sm:max-h-[90vh] max-w-3xl bg-neutral-950 sm:border border-neutral-800 sm:rounded-xl shadow-2xl overflow-hidden z-10 my-0 sm:my-auto text-white flex flex-col">
         
         {/* Header Bar */}
-        <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-900/60">
+        <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-900/60 safe-area-pt">
           <div className="flex items-center gap-3">
             <div className="w-6 h-6 bg-white text-black font-display font-black text-xs flex items-center justify-center">
               G
@@ -171,7 +170,8 @@ export const CheckoutModal: React.FC = () => {
           {step !== 4 && (
             <button
               onClick={() => setIsCheckoutOpen(false)}
-              className="p-2 text-neutral-400 hover:text-white rounded-md hover:bg-neutral-800 transition-colors"
+              className="p-2 text-neutral-400 hover:text-white rounded-md hover:bg-neutral-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
+              aria-label="Close Checkout"
             >
               <X size={18} />
             </button>
@@ -180,23 +180,23 @@ export const CheckoutModal: React.FC = () => {
 
         {/* Step Progress Tracker */}
         {step !== 4 && (
-          <div className="px-6 py-3 bg-neutral-900/30 border-b border-neutral-800/80">
+          <div className="px-4 sm:px-6 py-3 bg-neutral-900/30 border-b border-neutral-800/80">
             <div className="flex items-center justify-between max-w-md mx-auto text-xs font-mono">
-              <div className={`flex items-center gap-2 ${step >= 1 ? 'text-cyan-400 font-bold' : 'text-neutral-500'}`}>
+              <div className={`flex items-center gap-1.5 sm:gap-2 ${step >= 1 ? 'text-cyan-400 font-bold' : 'text-neutral-500'}`}>
                 <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px]">
                   1
                 </span>
                 <span>Shipping</span>
               </div>
-              <div className="w-8 h-[1px] bg-neutral-800" />
-              <div className={`flex items-center gap-2 ${step >= 2 ? 'text-cyan-400 font-bold' : 'text-neutral-500'}`}>
+              <div className="w-6 sm:w-8 h-[1px] bg-neutral-800" />
+              <div className={`flex items-center gap-1.5 sm:gap-2 ${step >= 2 ? 'text-cyan-400 font-bold' : 'text-neutral-500'}`}>
                 <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px]">
                   2
                 </span>
                 <span>Payment</span>
               </div>
-              <div className="w-8 h-[1px] bg-neutral-800" />
-              <div className={`flex items-center gap-2 ${step >= 3 ? 'text-cyan-400 font-bold' : 'text-neutral-500'}`}>
+              <div className="w-6 sm:w-8 h-[1px] bg-neutral-800" />
+              <div className={`flex items-center gap-1.5 sm:gap-2 ${step >= 3 ? 'text-cyan-400 font-bold' : 'text-neutral-500'}`}>
                 <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px]">
                   3
                 </span>
@@ -207,7 +207,7 @@ export const CheckoutModal: React.FC = () => {
         )}
 
         {/* Content Body */}
-        <div className="p-4 sm:p-6 sm:p-8 max-h-[80vh] overflow-y-auto">
+        <div className="flex-1 p-4 sm:p-6 sm:p-8 overflow-y-auto touch-scroll safe-area-pb">
           
           {/* STEP 1: SHIPPING & CONTACT */}
           {step === 1 && (
@@ -256,102 +256,105 @@ export const CheckoutModal: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
                 <div className="space-y-1 sm:col-span-2">
-                  <label className="text-neutral-400 uppercase">Full Name *</label>
+                  <label className="text-neutral-400 uppercase text-[11px]">Full Name *</label>
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full p-2.5 bg-neutral-900 border border-neutral-800 rounded text-white focus:outline-none focus:border-cyan-400"
+                    className="w-full p-3 sm:p-2.5 bg-neutral-900 border border-neutral-800 rounded text-white text-base sm:text-xs focus:outline-none focus:border-cyan-400 min-h-[44px]"
                     placeholder="Marcus Vance"
                     required
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-neutral-400 uppercase">Email Address *</label>
+                  <label className="text-neutral-400 uppercase text-[11px]">Email Address *</label>
                   <input
                     type="email"
+                    inputMode="email"
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full p-2.5 bg-neutral-900 border border-neutral-800 rounded text-white focus:outline-none focus:border-cyan-400"
+                    className="w-full p-3 sm:p-2.5 bg-neutral-900 border border-neutral-800 rounded text-white text-base sm:text-xs focus:outline-none focus:border-cyan-400 min-h-[44px]"
                     placeholder="marcus@domain.com"
                     required
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-neutral-400 uppercase">Phone Number</label>
+                  <label className="text-neutral-400 uppercase text-[11px]">Phone Number</label>
                   <input
-                    type="text"
+                    type="tel"
+                    inputMode="tel"
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="w-full p-2.5 bg-neutral-900 border border-neutral-800 rounded text-white focus:outline-none focus:border-cyan-400"
-                    placeholder="+1 (555) 000-0000"
+                    className="w-full p-3 sm:p-2.5 bg-neutral-900 border border-neutral-800 rounded text-white text-base sm:text-xs focus:outline-none focus:border-cyan-400 min-h-[44px]"
+                    placeholder="+91 98201 54321"
                   />
                 </div>
 
                 <div className="space-y-1 sm:col-span-2">
-                  <label className="text-neutral-400 uppercase">Street Address *</label>
+                  <label className="text-neutral-400 uppercase text-[11px]">Street Address *</label>
                   <input
                     type="text"
                     name="street"
                     value={formData.street}
                     onChange={handleInputChange}
-                    className="w-full p-2.5 bg-neutral-900 border border-neutral-800 rounded text-white focus:outline-none focus:border-cyan-400"
-                    placeholder="424 Broadway, Apt 4B"
+                    className="w-full p-3 sm:p-2.5 bg-neutral-900 border border-neutral-800 rounded text-white text-base sm:text-xs focus:outline-none focus:border-cyan-400 min-h-[44px]"
+                    placeholder="B-402, Horizon Towers, Worli"
                     required
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-neutral-400 uppercase">City *</label>
+                  <label className="text-neutral-400 uppercase text-[11px]">City *</label>
                   <input
                     type="text"
                     name="city"
                     value={formData.city}
                     onChange={handleInputChange}
-                    className="w-full p-2.5 bg-neutral-900 border border-neutral-800 rounded text-white focus:outline-none focus:border-cyan-400"
-                    placeholder="New York"
+                    className="w-full p-3 sm:p-2.5 bg-neutral-900 border border-neutral-800 rounded text-white text-base sm:text-xs focus:outline-none focus:border-cyan-400 min-h-[44px]"
+                    placeholder="Mumbai"
                     required
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <label className="text-neutral-400 uppercase">State/Province</label>
+                    <label className="text-neutral-400 uppercase text-[11px]">State</label>
                     <input
                       type="text"
                       name="state"
                       value={formData.state}
                       onChange={handleInputChange}
-                      className="w-full p-2.5 bg-neutral-900 border border-neutral-800 rounded text-white focus:outline-none focus:border-cyan-400"
-                      placeholder="NY"
+                      className="w-full p-3 sm:p-2.5 bg-neutral-900 border border-neutral-800 rounded text-white text-base sm:text-xs focus:outline-none focus:border-cyan-400 min-h-[44px]"
+                      placeholder="Maharashtra"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-neutral-400 uppercase">Postal Code *</label>
+                    <label className="text-neutral-400 uppercase text-[11px]">Postal Code *</label>
                     <input
                       type="text"
+                      inputMode="numeric"
                       name="zip"
                       value={formData.zip}
                       onChange={handleInputChange}
-                      className="w-full p-2.5 bg-neutral-900 border border-neutral-800 rounded text-white focus:outline-none focus:border-cyan-400"
-                      placeholder="10013"
+                      className="w-full p-3 sm:p-2.5 bg-neutral-900 border border-neutral-800 rounded text-white text-base sm:text-xs focus:outline-none focus:border-cyan-400 min-h-[44px]"
+                      placeholder="400018"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1 sm:col-span-2">
-                  <label className="text-neutral-400 uppercase">Country</label>
+                  <label className="text-neutral-400 uppercase text-[11px]">Country</label>
                   <select
                     name="country"
                     value={formData.country}
                     onChange={handleInputChange}
-                    className="w-full p-2.5 bg-neutral-900 border border-neutral-800 rounded text-white focus:outline-none focus:border-cyan-400"
+                    className="w-full p-3 sm:p-2.5 bg-neutral-900 border border-neutral-800 rounded text-white text-base sm:text-xs focus:outline-none focus:border-cyan-400 min-h-[44px]"
                   >
                     <option value="India">India</option>
                     <option value="United States">United States</option>
@@ -386,110 +389,253 @@ export const CheckoutModal: React.FC = () => {
                   2. Select Payment Method
                 </h3>
                 <p className="text-xs font-mono text-neutral-400">
-                  Select payment gateway or enter card details
+                  Select your preferred payment option: Cash on Delivery or Google Pay
                 </p>
               </div>
 
-              {/* Payment Method Tabs */}
-              <div className="grid grid-cols-3 gap-2.5">
+              {/* Payment Method Selection: 2 Types (1. Cash on delivery) (2. Google Pay) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* 1. Cash on Delivery */}
                 <button
                   type="button"
-                  onClick={() => setFormData({ ...formData, paymentMethod: 'card' })}
-                  className={`p-3 rounded-lg border text-center font-mono text-xs transition-all ${
-                    formData.paymentMethod === 'card'
-                      ? 'border-cyan-400 bg-cyan-950/30 text-white font-bold'
-                      : 'border-neutral-800 bg-neutral-900 text-neutral-400 hover:border-neutral-700'
+                  id="checkout-pay-method-cod-btn"
+                  onClick={() => setFormData({ ...formData, paymentMethod: 'cod' })}
+                  className={`p-4 rounded-xl border text-left font-mono transition-all flex items-start gap-3.5 relative overflow-hidden cursor-pointer ${
+                    formData.paymentMethod === 'cod'
+                      ? 'border-emerald-400/80 bg-emerald-950/20 text-white shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-400/50'
+                      : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
                   }`}
                 >
-                  <CreditCard size={18} className="mx-auto mb-1 text-cyan-400" />
-                  Credit / Debit
+                  <div className={`p-2.5 rounded-lg shrink-0 ${
+                    formData.paymentMethod === 'cod'
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      : 'bg-neutral-800 text-neutral-400'
+                  }`}>
+                    <Banknote size={22} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <span className="font-display font-bold text-sm text-white">
+                        1. Cash on delivery
+                      </span>
+                      {formData.paymentMethod === 'cod' && (
+                        <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full font-bold">
+                          ACTIVE
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-neutral-400 leading-snug">
+                      Pay in cash or scan courier UPI QR upon package arrival at your doorstep
+                    </p>
+                    <span className="inline-block mt-2 text-[10px] uppercase tracking-wider text-emerald-400 font-semibold">
+                      ✓ No advance payment
+                    </span>
+                  </div>
                 </button>
 
+                {/* 2. Google Pay */}
                 <button
                   type="button"
-                  onClick={() => setFormData({ ...formData, paymentMethod: 'apple_pay' })}
-                  className={`p-3 rounded-lg border text-center font-mono text-xs transition-all ${
-                    formData.paymentMethod === 'apple_pay'
-                      ? 'border-cyan-400 bg-cyan-950/30 text-white font-bold'
-                      : 'border-neutral-800 bg-neutral-900 text-neutral-400 hover:border-neutral-700'
+                  id="checkout-pay-method-gpay-btn"
+                  onClick={() => setFormData({ ...formData, paymentMethod: 'gpay' })}
+                  className={`p-4 rounded-xl border text-left font-mono transition-all flex items-start gap-3.5 relative overflow-hidden cursor-pointer ${
+                    formData.paymentMethod === 'gpay'
+                      ? 'border-cyan-400/80 bg-cyan-950/20 text-white shadow-lg shadow-cyan-500/10 ring-1 ring-cyan-400/50'
+                      : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
                   }`}
                 >
-                  <span className="text-base block mb-1"></span>
-                  Apple Pay
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, paymentMethod: 'klarna' })}
-                  className={`p-3 rounded-lg border text-center font-mono text-xs transition-all ${
-                    formData.paymentMethod === 'klarna'
-                      ? 'border-cyan-400 bg-cyan-950/30 text-white font-bold'
-                      : 'border-neutral-800 bg-neutral-900 text-neutral-400 hover:border-neutral-700'
-                  }`}
-                >
-                  <span className="font-display font-black text-pink-400 block mb-1">K.</span>
-                  Klarna (4x)
+                  <div className={`p-2.5 rounded-lg shrink-0 flex items-center justify-center ${
+                    formData.paymentMethod === 'gpay'
+                      ? 'bg-white/10 text-white border border-cyan-500/40'
+                      : 'bg-neutral-800 text-neutral-400'
+                  }`}>
+                    {/* Google G Brand Logo */}
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path
+                        fill="#4285F4"
+                        d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.17 0 9.99 0 12s.45 3.83 1.25 5.42l4.03-3.15z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <span className="font-display font-bold text-sm text-white flex items-center gap-1.5">
+                        2. Google Pay
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 bg-white/10 text-white rounded font-normal">GPay</span>
+                      </span>
+                      {formData.paymentMethod === 'gpay' && (
+                        <span className="text-[10px] font-mono px-2 py-0.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 rounded-full font-bold">
+                          ACTIVE
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-neutral-400 leading-snug">
+                      Instant, fast & secured 1-tap UPI payment linked to Google Pay
+                    </p>
+                    <span className="inline-block mt-2 text-[10px] uppercase tracking-wider text-cyan-400 font-semibold">
+                      ⚡ Instant UPI Authorization
+                    </span>
+                  </div>
                 </button>
               </div>
 
-              {/* Mock Credit Card Form */}
-              {formData.paymentMethod === 'card' && (
-                <div className="p-4 bg-neutral-900/60 border border-neutral-800 rounded-lg space-y-4 text-xs font-mono">
-                  <div className="space-y-1">
-                    <label className="text-neutral-400 uppercase">Card Number</label>
+              {/* CASH ON DELIVERY DETAILS VIEW */}
+              {formData.paymentMethod === 'cod' && (
+                <div className="p-5 bg-gradient-to-b from-neutral-900/90 to-neutral-950/80 border border-emerald-500/30 rounded-xl space-y-4 text-xs font-mono">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 shrink-0 mt-0.5">
+                      <Truck size={20} />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                          Cash on Delivery (COD) Selected
+                        </h4>
+                        <span className="px-2 py-0.5 text-[10px] font-mono bg-emerald-950/60 text-emerald-400 border border-emerald-800 rounded">
+                          Pay on Arrival
+                        </span>
+                      </div>
+                      <p className="text-neutral-400 mt-1 leading-relaxed text-xs">
+                        No online transaction required right now. You inspect the parcel and pay our courier executive when it arrives.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div className="p-3.5 bg-neutral-900/90 border border-neutral-800/80 rounded-lg space-y-1">
+                      <span className="text-[10px] uppercase text-neutral-500 block font-bold">
+                        Exact Cash Due on Delivery
+                      </span>
+                      <p className="text-xl font-bold text-emerald-400 font-mono">
+                        {formatINR(effectiveCartTotal)}
+                      </p>
+                      <span className="text-[10px] text-neutral-400 block">
+                        Includes all taxes and {effectiveShippingFee === 0 ? 'Free Shipping' : 'shipping fee'}
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 bg-neutral-900/90 border border-neutral-800/80 rounded-lg space-y-1.5">
+                      <span className="text-[10px] uppercase text-neutral-500 block font-bold">
+                        Accepted Payment Modes at Doorstep
+                      </span>
+                      <ul className="text-[11px] text-neutral-300 space-y-1 font-mono">
+                        <li className="flex items-center gap-1.5">
+                          <Check size={13} className="text-emerald-400 shrink-0" />
+                          <span>INR Cash banknotes (exact change appreciated)</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <Check size={13} className="text-emerald-400 shrink-0" />
+                          <span>Scan delivery partner QR via any UPI app</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-emerald-950/20 border border-emerald-900/40 rounded-lg text-neutral-300 text-[11px] flex items-center gap-2.5">
+                    <ShieldCheck size={16} className="text-emerald-400 shrink-0" />
+                    <span>
+                      Delivery updates & dispatch code will be sent to <strong className="text-white">{formData.phone}</strong>
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* GOOGLE PAY DETAILS VIEW */}
+              {formData.paymentMethod === 'gpay' && (
+                <div className="p-5 bg-gradient-to-b from-neutral-900/90 to-neutral-950/80 border border-cyan-500/30 rounded-xl space-y-4 text-xs font-mono">
+                  <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3 flex-wrap gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center p-1.5 shadow-sm">
+                        <svg className="w-full h-full" viewBox="0 0 24 24">
+                          <path
+                            fill="#4285F4"
+                            d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+                          />
+                          <path
+                            fill="#34A853"
+                            d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+                          />
+                          <path
+                            fill="#FBBC05"
+                            d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.17 0 9.99 0 12s.45 3.83 1.25 5.42l4.03-3.15z"
+                          />
+                          <path
+                            fill="#EA4335"
+                            d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                          />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-sm text-white">Google Pay Fast Checkout</h4>
+                        <p className="text-[11px] text-neutral-400">Direct UPI debit linked to your Google account</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-neutral-500 uppercase block">Total Payable</span>
+                      <span className="font-bold text-cyan-400 text-sm">{formatINR(effectiveCartTotal)}</span>
+                    </div>
+                  </div>
+
+                  {/* GPay UPI ID Input */}
+                  <div className="space-y-2">
+                    <label className="text-neutral-400 uppercase text-[11px] block">
+                      Google Pay UPI ID (Optional / Fast Authorization)
+                    </label>
                     <div className="relative">
                       <input
                         type="text"
-                        name="cardNumber"
-                        value={formData.cardNumber}
+                        name="gpayUpiId"
+                        value={formData.gpayUpiId}
                         onChange={handleInputChange}
-                        className="w-full p-2.5 bg-neutral-950 border border-neutral-800 rounded text-white font-mono focus:outline-none focus:border-cyan-400"
-                        placeholder="•••• •••• •••• 4242"
+                        className="w-full p-3 sm:p-2.5 bg-neutral-950 border border-neutral-800 rounded-lg text-white text-base sm:text-xs font-mono focus:outline-none focus:border-cyan-400 min-h-[44px]"
+                        placeholder="yourname@okhdfcbank or 9820154321@oksbi"
                       />
-                      <CreditCard size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                      <Smartphone size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                    </div>
+
+                    {/* Quick Handle Suggestions */}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <span className="text-[10px] text-neutral-500">Popular handles:</span>
+                      {['@okhdfcbank', '@oksbi', '@okaxis', '@okicici'].map((suffix) => (
+                        <button
+                          key={suffix}
+                          type="button"
+                          onClick={() => {
+                            const base = formData.gpayUpiId.includes('@')
+                              ? formData.gpayUpiId.split('@')[0]
+                              : (formData.gpayUpiId || 'arjun');
+                            setFormData({ ...formData, gpayUpiId: `${base}${suffix}` });
+                          }}
+                          className="px-2 py-0.5 bg-neutral-800/80 hover:bg-neutral-700 text-[10px] text-cyan-400 rounded border border-neutral-700 hover:border-cyan-400 transition-colors cursor-pointer"
+                        >
+                          {suffix}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-neutral-400 uppercase">Expiration</label>
-                      <input
-                        type="text"
-                        name="cardExpiry"
-                        value={formData.cardExpiry}
-                        onChange={handleInputChange}
-                        className="w-full p-2.5 bg-neutral-950 border border-neutral-800 rounded text-white font-mono focus:outline-none focus:border-cyan-400"
-                        placeholder="MM/YY"
-                      />
+                  {/* QR & Security Info */}
+                  <div className="p-3 bg-neutral-900/80 border border-neutral-800 rounded-lg flex items-center justify-between gap-3 text-[11px]">
+                    <div className="flex items-center gap-2 text-neutral-300">
+                      <QrCode size={18} className="text-cyan-400 shrink-0" />
+                      <span>Google Pay UPI payment request will be initiated directly</span>
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-neutral-400 uppercase">CVC / CVV</label>
-                      <input
-                        type="text"
-                        name="cardCvc"
-                        value={formData.cardCvc}
-                        onChange={handleInputChange}
-                        className="w-full p-2.5 bg-neutral-950 border border-neutral-800 rounded text-white font-mono focus:outline-none focus:border-cyan-400"
-                        placeholder="889"
-                      />
-                    </div>
+                    <span className="px-2 py-1 bg-cyan-950/60 border border-cyan-800/60 text-cyan-400 rounded text-[10px] font-bold shrink-0">
+                      SECURE 256-BIT
+                    </span>
                   </div>
-                </div>
-              )}
-
-              {formData.paymentMethod === 'apple_pay' && (
-                <div className="p-6 bg-neutral-900/60 border border-neutral-800 rounded-lg text-center space-y-2">
-                  <p className="text-sm font-bold text-white">Apple Pay Instant Checkout</p>
-                  <p className="text-xs font-mono text-neutral-400">
-                    Touch ID / Face ID authorized for {formatINR(effectiveCartTotal)}
-                  </p>
-                </div>
-              )}
-
-              {formData.paymentMethod === 'klarna' && (
-                <div className="p-4 bg-pink-950/20 border border-pink-900/40 rounded-lg text-xs font-mono space-y-2 text-pink-200">
-                  <p className="font-bold text-white">4 Interest-free installments of {formatINR(effectiveCartTotal / 4)}</p>
-                  <p className="text-neutral-400">First payment due today, remaining every 2 weeks automatically.</p>
                 </div>
               )}
 
@@ -565,8 +711,14 @@ export const CheckoutModal: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-neutral-500 uppercase text-[10px]">Payment:</span>
-                  <p className="text-white font-bold uppercase">{formData.paymentMethod}</p>
-                  <p className="text-neutral-400">Billed: {formatINR(effectiveCartTotal)}</p>
+                  <p className="text-white font-bold uppercase">
+                    {formData.paymentMethod === 'gpay' ? '2. Google Pay (UPI)' : '1. Cash on Delivery (COD)'}
+                  </p>
+                  <p className="text-neutral-400">
+                    {formData.paymentMethod === 'gpay'
+                      ? `Instant UPI debit: ${formatINR(effectiveCartTotal)}`
+                      : `Pay ${formatINR(effectiveCartTotal)} in cash/UPI on arrival`}
+                  </p>
                 </div>
               </div>
 
@@ -615,7 +767,11 @@ export const CheckoutModal: React.FC = () => {
                   className="w-full sm:w-auto px-8 py-3.5 bg-cyan-400 hover:bg-cyan-300 text-black font-display font-black text-xs uppercase tracking-wider rounded transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-cyan-500/20 min-h-[46px]"
                 >
                   <Lock size={14} />
-                  <span>AUTHORIZE & PLACE ORDER ({formatINR(effectiveCartTotal)})</span>
+                  <span>
+                    {formData.paymentMethod === 'gpay'
+                      ? `PAY VIA GOOGLE PAY (${formatINR(effectiveCartTotal)})`
+                      : `CONFIRM CASH ON DELIVERY ORDER (${formatINR(effectiveCartTotal)})`}
+                  </span>
                 </button>
               </div>
             </div>
@@ -646,6 +802,10 @@ export const CheckoutModal: React.FC = () => {
                 <div className="flex justify-between border-b border-neutral-800 pb-2">
                   <span className="text-neutral-400">ORDER NUMBER</span>
                   <span className="font-bold text-cyan-400">{completedOrder.orderNumber}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-neutral-400">PAYMENT METHOD</span>
+                  <span className="font-bold text-cyan-400">{completedOrder.paymentMethod}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-neutral-400">SHIPPING METHOD</span>

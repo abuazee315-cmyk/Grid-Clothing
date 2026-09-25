@@ -15,11 +15,13 @@ import {
   Check,
   Edit2,
   Printer,
+  Plus,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { Order, OrderStatus } from '../../types';
 import { formatINR } from '../../utils/currency';
 import { OrderDateEditModal } from './OrderDateEditModal';
+import { AddNewOrderModal } from './AddNewOrderModal';
 
 export const OrderFulfillment: React.FC = () => {
   const { orders, updateOrderStatus, updateOrderDates, openPrintBill } = useStore();
@@ -28,6 +30,7 @@ export const OrderFulfillment: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editingDatesOrder, setEditingDatesOrder] = useState<Order | null>(null);
+  const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
 
   // Inspector internal date editing state
   const [inspectorOrderDate, setInspectorOrderDate] = useState('');
@@ -114,8 +117,18 @@ export const OrderFulfillment: React.FC = () => {
           </h1>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-neutral-400">
-          <span>TOTAL QUEUE: <strong className="text-white">{orders.length} ORDERS</strong></span>
+        <div className="flex items-center gap-3">
+          <div className="text-xs font-mono text-neutral-400 hidden sm:block">
+            <span>TOTAL QUEUE: <strong className="text-white">{orders.length} ORDERS</strong></span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsAddOrderOpen(true)}
+            className="px-3.5 py-2 bg-cyan-400 hover:bg-cyan-300 text-black font-mono text-xs font-bold uppercase rounded-md flex items-center gap-2 transition-colors cursor-pointer shadow-md shadow-cyan-950"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add New Order</span>
+          </button>
         </div>
       </div>
 
@@ -548,6 +561,16 @@ export const OrderFulfillment: React.FC = () => {
         order={editingDatesOrder}
         isOpen={Boolean(editingDatesOrder)}
         onClose={() => setEditingDatesOrder(null)}
+      />
+
+      {/* Add New Order Modal with World Colorway Search */}
+      <AddNewOrderModal
+        isOpen={isAddOrderOpen}
+        onClose={() => setIsAddOrderOpen(false)}
+        onOrderCreated={(orderId) => {
+          const ord = orders.find((o) => o.id === orderId);
+          if (ord) setSelectedOrder(ord);
+        }}
       />
     </div>
   );

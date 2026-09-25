@@ -44,11 +44,11 @@ export const ProductBillModal: React.FC<ProductBillModalProps> = ({
   return (
     <div
       id="product-bill-modal-overlay"
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/80 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-6 bg-black/80 backdrop-blur-sm overflow-y-auto"
     >
-      <div className="relative w-full max-w-4xl my-auto bg-neutral-950 border border-neutral-800 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
+      <div className="relative w-full h-full sm:h-auto my-0 sm:my-auto max-w-4xl bg-neutral-950 sm:border border-neutral-800 sm:rounded-xl shadow-2xl overflow-hidden flex flex-col sm:max-h-[95vh]">
         {/* Top Control Bar (Hidden when printed) */}
-        <div className="no-print flex items-center justify-between px-4 sm:px-5 py-3 bg-neutral-900 border-b border-neutral-800 shrink-0">
+        <div className="no-print flex items-center justify-between px-4 sm:px-5 py-3 bg-neutral-900 border-b border-neutral-800 shrink-0 safe-area-pt">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 bg-cyan-400/10 text-cyan-400 rounded">
               <Printer size={16} />
@@ -86,7 +86,7 @@ export const ProductBillModal: React.FC<ProductBillModalProps> = ({
         </div>
 
         {/* Scrollable Bill Container */}
-        <div className="p-2.5 sm:p-8 overflow-y-auto bg-neutral-900/40">
+        <div className="p-2.5 sm:p-8 overflow-y-auto bg-neutral-900/40 touch-scroll safe-area-pb flex-1">
           {/* Printable Sheet (Always formatted with high contrast light background for crisp physical paper print) */}
           <div
             id="printable-product-bill"

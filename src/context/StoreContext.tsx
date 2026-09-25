@@ -115,6 +115,20 @@ interface StoreContextType {
 
   // Orders
   orders: Order[];
+  addManualOrder: (orderData: {
+    customerName: string;
+    customerEmail: string;
+    customerPhone?: string;
+    shippingAddress: Order['shippingAddress'];
+    items: Order['items'];
+    subtotal: number;
+    discount?: number;
+    shipping?: number;
+    tax?: number;
+    total: number;
+    status?: OrderStatus;
+    paymentMethod?: string;
+  }) => Order;
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
   updateOrderDates: (orderId: string, dates: { createdAt?: string; dispatchDate?: string }) => void;
   updateOrder: (orderId: string, updates: Partial<Order>) => void;
@@ -865,6 +879,68 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return newOrder;
   };
 
+  // Add Manual Order (from Admin ERP / Back Office)
+  const addManualOrder = (orderData: {
+    customerName: string;
+    customerEmail: string;
+    customerPhone?: string;
+    shippingAddress: Order['shippingAddress'];
+    items: Order['items'];
+    subtotal: number;
+    discount?: number;
+    shipping?: number;
+    tax?: number;
+    total: number;
+    status?: OrderStatus;
+    paymentMethod?: string;
+  }): Order => {
+    const orderNum = `GRD-${Math.floor(8900 + Math.random() * 1000)}`;
+
+    const newOrder: Order = {
+      id: `ord-${Date.now()}`,
+      orderNumber: orderNum,
+      customerName: orderData.customerName,
+      customerEmail: orderData.customerEmail,
+      shippingAddress: orderData.shippingAddress,
+      items: orderData.items,
+      subtotal: orderData.subtotal,
+      discount: orderData.discount || 0,
+      shipping: orderData.shipping || 0,
+      shippingOption: (orderData.shipping || 0) === 0 ? '1. Free Delivery' : '2. Standard Delivery',
+      tax: orderData.tax || 0,
+      total: orderData.total,
+      status: orderData.status || 'Processing',
+      createdAt: new Date().toISOString(),
+      paymentMethod: orderData.paymentMethod || 'Manual Admin Entry',
+    };
+
+    // Deduct stock for linked product items
+    setProducts((prev) =>
+      prev.map((prod) => {
+        const matchingItems = orderData.items.filter((it) => it.productId === prod.id);
+        if (matchingItems.length > 0) {
+          const qtySum = matchingItems.reduce((acc, it) => acc + it.quantity, 0);
+          return {
+            ...prod,
+            stock: Math.max(0, prod.stock - qtySum),
+          };
+        }
+        return prod;
+      })
+    );
+
+    // Save locally
+    setOrders((prev) => [newOrder, ...prev]);
+
+    // Persist to Firestore
+    setDoc(doc(db, 'orders', newOrder.id), newOrder).catch((err) =>
+      console.warn('[Firestore] addManualOrder sync error:', err)
+    );
+
+    triggerNotification(`New Order #${orderNum} created successfully!`);
+    return newOrder;
+  };
+
   // Inventory management
   const addProduct = (productData: Omit<Product, 'id'>): Product => {
     const newProduct: Product = {
@@ -1129,6 +1205,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateProduct,
         deleteProduct,
         orders,
+        addManualOrder,
         updateOrderStatus,
         updateOrderDates,
         updateOrder,

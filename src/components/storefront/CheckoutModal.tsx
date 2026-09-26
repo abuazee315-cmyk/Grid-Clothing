@@ -20,11 +20,14 @@ import {
   Banknote,
   Smartphone,
   QrCode,
+  Building2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useStore } from '../../context/StoreContext';
 import { Order } from '../../types';
 import { formatINR } from '../../utils/currency';
+import { IndianBankSelector } from './IndianBankSelector';
+import { IndianBank } from '../../data/indianBanks';
 
 export const CheckoutModal: React.FC = () => {
   const {
@@ -60,8 +63,11 @@ export const CheckoutModal: React.FC = () => {
     state: 'Maharashtra',
     zip: '400018',
     country: 'India',
-    paymentMethod: 'cod', // 'cod' (Cash on delivery) or 'gpay' (Google Pay)
-    gpayUpiId: 'arjun@okhdfcbank',
+    paymentMethod: 'cod', // 'cod' (Cash on delivery), 'gpay' (Google Pay), or 'phonepe' (PhonePe)
+    gpayUpiId: 'arjun@okcorp',
+    phonepeUpiId: 'arjun@ybl',
+    selectedBankId: 'corporation-bank',
+    selectedBankName: 'Corporation Bank',
   });
 
   // Prepopulate customer details if logged in
@@ -90,11 +96,41 @@ export const CheckoutModal: React.FC = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleBankSelect = (bank: IndianBank) => {
+    setFormData((prev) => {
+      // Intelligently compute default UPI suffix based on payment method and bank
+      const cleanPrefix = prev.phone ? prev.phone.replace(/[^0-9]/g, '').slice(-10) : 'user';
+      let nextGpayUpi = prev.gpayUpiId;
+      let nextPhonepeUpi = prev.phonepeUpiId;
+
+      if (bank.gpaySuffix) {
+        const userPart = prev.gpayUpiId.includes('@') ? prev.gpayUpiId.split('@')[0] : cleanPrefix;
+        nextGpayUpi = `${userPart}${bank.gpaySuffix}`;
+      }
+      if (bank.phonepeSuffix) {
+        const userPart = prev.phonepeUpiId.includes('@') ? prev.phonepeUpiId.split('@')[0] : cleanPrefix;
+        nextPhonepeUpi = `${userPart}${bank.phonepeSuffix}`;
+      }
+
+      return {
+        ...prev,
+        selectedBankId: bank.id,
+        selectedBankName: bank.name,
+        gpayUpiId: nextGpayUpi,
+        phonepeUpiId: nextPhonepeUpi,
+      };
+    });
+  };
+
   const handlePlaceOrder = () => {
-    const paymentLabel =
-      formData.paymentMethod === 'gpay'
-        ? (formData.gpayUpiId && formData.gpayUpiId.trim() ? `Google Pay (${formData.gpayUpiId.trim()})` : 'Google Pay (GPay UPI)')
-        : 'Cash on delivery (COD)';
+    let paymentLabel = 'Cash on delivery (COD)';
+    if (formData.paymentMethod === 'gpay') {
+      const vpa = formData.gpayUpiId && formData.gpayUpiId.trim() ? formData.gpayUpiId.trim() : 'GPay UPI';
+      paymentLabel = `Google Pay • ${formData.selectedBankName} (${vpa})`;
+    } else if (formData.paymentMethod === 'phonepe') {
+      const vpa = formData.phonepeUpiId && formData.phonepeUpiId.trim() ? formData.phonepeUpiId.trim() : 'PhonePe UPI';
+      paymentLabel = `PhonePe • ${formData.selectedBankName} (${vpa})`;
+    }
 
     const shippingMethodLabel =
       cartShipping === 0
@@ -389,48 +425,48 @@ export const CheckoutModal: React.FC = () => {
                   2. Select Payment Method
                 </h3>
                 <p className="text-xs font-mono text-neutral-400">
-                  Select your preferred payment option: Cash on Delivery or Google Pay
+                  Select your preferred payment option: Cash on Delivery, Google Pay, or PhonePe
                 </p>
               </div>
 
-              {/* Payment Method Selection: 2 Types (1. Cash on delivery) (2. Google Pay) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {/* Payment Method Selection: 3 Options (1. Cash on delivery) (2. Google Pay) (3. PhonePe) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* 1. Cash on Delivery */}
                 <button
                   type="button"
                   id="checkout-pay-method-cod-btn"
                   onClick={() => setFormData({ ...formData, paymentMethod: 'cod' })}
-                  className={`p-4 rounded-xl border text-left font-mono transition-all flex items-start gap-3.5 relative overflow-hidden cursor-pointer ${
+                  className={`p-3.5 rounded-xl border text-left font-mono transition-all flex flex-col justify-between relative overflow-hidden cursor-pointer ${
                     formData.paymentMethod === 'cod'
-                      ? 'border-emerald-400/80 bg-emerald-950/20 text-white shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-400/50'
+                      ? 'border-emerald-400/80 bg-emerald-950/25 text-white shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-400/50'
                       : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
                   }`}
                 >
-                  <div className={`p-2.5 rounded-lg shrink-0 ${
-                    formData.paymentMethod === 'cod'
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-neutral-800 text-neutral-400'
-                  }`}>
-                    <Banknote size={22} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1 mb-1">
-                      <span className="font-display font-bold text-sm text-white">
-                        1. Cash on delivery
-                      </span>
+                  <div>
+                    <div className="flex items-center justify-between gap-1 mb-2">
+                      <div className={`p-2 rounded-lg shrink-0 ${
+                        formData.paymentMethod === 'cod'
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : 'bg-neutral-800 text-neutral-400'
+                      }`}>
+                        <Banknote size={20} />
+                      </div>
                       {formData.paymentMethod === 'cod' && (
-                        <span className="text-[10px] font-mono px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full font-bold">
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full font-bold">
                           ACTIVE
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-neutral-400 leading-snug">
-                      Pay in cash or scan courier UPI QR upon package arrival at your doorstep
-                    </p>
-                    <span className="inline-block mt-2 text-[10px] uppercase tracking-wider text-emerald-400 font-semibold">
-                      ✓ No advance payment
+                    <span className="font-display font-bold text-sm text-white block">
+                      1. Cash on delivery
                     </span>
+                    <p className="text-[11px] text-neutral-400 leading-snug mt-1">
+                      Pay in cash or scan courier QR on doorstep arrival
+                    </p>
                   </div>
+                  <span className="inline-block mt-3 text-[10px] uppercase tracking-wider text-emerald-400 font-semibold">
+                    ✓ No advance payment
+                  </span>
                 </button>
 
                 {/* 2. Google Pay */}
@@ -438,56 +474,98 @@ export const CheckoutModal: React.FC = () => {
                   type="button"
                   id="checkout-pay-method-gpay-btn"
                   onClick={() => setFormData({ ...formData, paymentMethod: 'gpay' })}
-                  className={`p-4 rounded-xl border text-left font-mono transition-all flex items-start gap-3.5 relative overflow-hidden cursor-pointer ${
+                  className={`p-3.5 rounded-xl border text-left font-mono transition-all flex flex-col justify-between relative overflow-hidden cursor-pointer ${
                     formData.paymentMethod === 'gpay'
-                      ? 'border-cyan-400/80 bg-cyan-950/20 text-white shadow-lg shadow-cyan-500/10 ring-1 ring-cyan-400/50'
+                      ? 'border-cyan-400/80 bg-cyan-950/25 text-white shadow-lg shadow-cyan-500/10 ring-1 ring-cyan-400/50'
                       : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
                   }`}
                 >
-                  <div className={`p-2.5 rounded-lg shrink-0 flex items-center justify-center ${
-                    formData.paymentMethod === 'gpay'
-                      ? 'bg-white/10 text-white border border-cyan-500/40'
-                      : 'bg-neutral-800 text-neutral-400'
-                  }`}>
-                    {/* Google G Brand Logo */}
-                    <svg className="w-5 h-5" viewBox="0 0 24 24">
-                      <path
-                        fill="#4285F4"
-                        d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
-                      />
-                      <path
-                        fill="#34A853"
-                        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
-                      />
-                      <path
-                        fill="#FBBC05"
-                        d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.17 0 9.99 0 12s.45 3.83 1.25 5.42l4.03-3.15z"
-                      />
-                      <path
-                        fill="#EA4335"
-                        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1 mb-1">
-                      <span className="font-display font-bold text-sm text-white flex items-center gap-1.5">
-                        2. Google Pay
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 bg-white/10 text-white rounded font-normal">GPay</span>
-                      </span>
+                  <div>
+                    <div className="flex items-center justify-between gap-1 mb-2">
+                      <div className={`p-2 rounded-lg shrink-0 flex items-center justify-center ${
+                        formData.paymentMethod === 'gpay'
+                          ? 'bg-white/10 text-white border border-cyan-500/40'
+                          : 'bg-neutral-800 text-neutral-400'
+                      }`}>
+                        {/* Google G Brand Logo */}
+                        <svg className="w-5 h-5" viewBox="0 0 24 24">
+                          <path
+                            fill="#4285F4"
+                            d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+                          />
+                          <path
+                            fill="#34A853"
+                            d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
+                          />
+                          <path
+                            fill="#FBBC05"
+                            d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.17 0 9.99 0 12s.45 3.83 1.25 5.42l4.03-3.15z"
+                          />
+                          <path
+                            fill="#EA4335"
+                            d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                          />
+                        </svg>
+                      </div>
                       {formData.paymentMethod === 'gpay' && (
-                        <span className="text-[10px] font-mono px-2 py-0.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 rounded-full font-bold">
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 rounded-full font-bold">
                           ACTIVE
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-neutral-400 leading-snug">
-                      Instant, fast & secured 1-tap UPI payment linked to Google Pay
-                    </p>
-                    <span className="inline-block mt-2 text-[10px] uppercase tracking-wider text-cyan-400 font-semibold">
-                      ⚡ Instant UPI Authorization
+                    <span className="font-display font-bold text-sm text-white flex items-center gap-1.5">
+                      2. Google Pay
+                      <span className="text-[9px] font-mono px-1 py-0.2 bg-white/10 text-white rounded">GPay</span>
                     </span>
+                    <p className="text-[11px] text-neutral-400 leading-snug mt-1">
+                      Fast 1-tap UPI debit with Indian Bank selection
+                    </p>
                   </div>
+                  <span className="inline-block mt-3 text-[10px] uppercase tracking-wider text-cyan-400 font-semibold">
+                    ⚡ Instant UPI Debit
+                  </span>
+                </button>
+
+                {/* 3. PhonePe */}
+                <button
+                  type="button"
+                  id="checkout-pay-method-phonepe-btn"
+                  onClick={() => setFormData({ ...formData, paymentMethod: 'phonepe' })}
+                  className={`p-3.5 rounded-xl border text-left font-mono transition-all flex flex-col justify-between relative overflow-hidden cursor-pointer ${
+                    formData.paymentMethod === 'phonepe'
+                      ? 'border-purple-400/80 bg-purple-950/25 text-white shadow-lg shadow-purple-500/10 ring-1 ring-purple-400/50'
+                      : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-1 mb-2">
+                      <div className={`p-2 rounded-lg shrink-0 flex items-center justify-center ${
+                        formData.paymentMethod === 'phonepe'
+                          ? 'bg-purple-500/20 text-white border border-purple-500/40'
+                          : 'bg-neutral-800 text-neutral-400'
+                      }`}>
+                        {/* PhonePe Purple Brand Icon */}
+                        <div className="w-5 h-5 bg-[#5f259f] rounded-md flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                          पे
+                        </div>
+                      </div>
+                      {formData.paymentMethod === 'phonepe' && (
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 bg-purple-500/20 text-purple-400 border border-purple-500/40 rounded-full font-bold">
+                          ACTIVE
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-display font-bold text-sm text-white flex items-center gap-1.5">
+                      3. PhonePe
+                      <span className="text-[9px] font-mono px-1 py-0.2 bg-purple-900/50 text-purple-300 rounded">P-Pay</span>
+                    </span>
+                    <p className="text-[11px] text-neutral-400 leading-snug mt-1">
+                      Direct UPI debit with Indian Bank selection
+                    </p>
+                  </div>
+                  <span className="inline-block mt-3 text-[10px] uppercase tracking-wider text-purple-400 font-semibold">
+                    ⚡ 1-Tap UPI Autopay
+                  </span>
                 </button>
               </div>
 
@@ -552,7 +630,7 @@ export const CheckoutModal: React.FC = () => {
                 </div>
               )}
 
-              {/* GOOGLE PAY DETAILS VIEW */}
+              {/* GOOGLE PAY DETAILS VIEW WITH INDIAN BANK SELECTION */}
               {formData.paymentMethod === 'gpay' && (
                 <div className="p-5 bg-gradient-to-b from-neutral-900/90 to-neutral-950/80 border border-cyan-500/30 rounded-xl space-y-4 text-xs font-mono">
                   <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3 flex-wrap gap-2">
@@ -579,7 +657,7 @@ export const CheckoutModal: React.FC = () => {
                       </div>
                       <div>
                         <h4 className="font-bold text-sm text-white">Google Pay Fast Checkout</h4>
-                        <p className="text-[11px] text-neutral-400">Direct UPI debit linked to your Google account</p>
+                        <p className="text-[11px] text-neutral-400">Direct UPI debit linked to your Google account & Indian bank</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -588,10 +666,17 @@ export const CheckoutModal: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Linked Indian Bank Selector Component */}
+                  <IndianBankSelector
+                    selectedBankId={formData.selectedBankId}
+                    onSelectBank={handleBankSelect}
+                    paymentApp="gpay"
+                  />
+
                   {/* GPay UPI ID Input */}
-                  <div className="space-y-2">
+                  <div className="space-y-2 pt-1 border-t border-neutral-800/70">
                     <label className="text-neutral-400 uppercase text-[11px] block">
-                      Google Pay UPI ID (Optional / Fast Authorization)
+                      Google Pay UPI ID (Linked to {formData.selectedBankName})
                     </label>
                     <div className="relative">
                       <input
@@ -600,15 +685,15 @@ export const CheckoutModal: React.FC = () => {
                         value={formData.gpayUpiId}
                         onChange={handleInputChange}
                         className="w-full p-3 sm:p-2.5 bg-neutral-950 border border-neutral-800 rounded-lg text-white text-base sm:text-xs font-mono focus:outline-none focus:border-cyan-400 min-h-[44px]"
-                        placeholder="yourname@okhdfcbank or 9820154321@oksbi"
+                        placeholder="yourname@okcorp or 9820154321@okunion"
                       />
                       <Smartphone size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                     </div>
 
                     {/* Quick Handle Suggestions */}
                     <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                      <span className="text-[10px] text-neutral-500">Popular handles:</span>
-                      {['@okhdfcbank', '@oksbi', '@okaxis', '@okicici'].map((suffix) => (
+                      <span className="text-[10px] text-neutral-500">Quick handles for {formData.selectedBankName}:</span>
+                      {['@okcorp', '@okunion', '@okbaroda', '@oksbi', '@okhdfcbank'].map((suffix) => (
                         <button
                           key={suffix}
                           type="button"
@@ -618,7 +703,11 @@ export const CheckoutModal: React.FC = () => {
                               : (formData.gpayUpiId || 'arjun');
                             setFormData({ ...formData, gpayUpiId: `${base}${suffix}` });
                           }}
-                          className="px-2 py-0.5 bg-neutral-800/80 hover:bg-neutral-700 text-[10px] text-cyan-400 rounded border border-neutral-700 hover:border-cyan-400 transition-colors cursor-pointer"
+                          className={`px-2 py-0.5 text-[10px] rounded border transition-colors cursor-pointer ${
+                            formData.gpayUpiId.endsWith(suffix)
+                              ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/60 font-bold'
+                              : 'bg-neutral-800/80 hover:bg-neutral-700 text-neutral-300 border-neutral-700 hover:border-cyan-400'
+                          }`}
                         >
                           {suffix}
                         </button>
@@ -630,10 +719,96 @@ export const CheckoutModal: React.FC = () => {
                   <div className="p-3 bg-neutral-900/80 border border-neutral-800 rounded-lg flex items-center justify-between gap-3 text-[11px]">
                     <div className="flex items-center gap-2 text-neutral-300">
                       <QrCode size={18} className="text-cyan-400 shrink-0" />
-                      <span>Google Pay UPI payment request will be initiated directly</span>
+                      <span>Google Pay UPI collect request will be sent to your device</span>
                     </div>
                     <span className="px-2 py-1 bg-cyan-950/60 border border-cyan-800/60 text-cyan-400 rounded text-[10px] font-bold shrink-0">
-                      SECURE 256-BIT
+                      NPCI UPI ENCRYPTED
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* PHONEPE (P-PAY) DETAILS VIEW WITH INDIAN BANK SELECTION */}
+              {formData.paymentMethod === 'phonepe' && (
+                <div className="p-5 bg-gradient-to-b from-neutral-900/90 to-neutral-950/80 border border-purple-500/30 rounded-xl space-y-4 text-xs font-mono">
+                  <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3 flex-wrap gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-[#5f259f] flex items-center justify-center text-white font-bold text-base shadow-sm">
+                        पे
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-sm text-white flex items-center gap-1.5">
+                          PhonePe (P-Pay) Fast Checkout
+                          <span className="text-[10px] font-normal px-1.5 py-0.5 bg-purple-900/40 text-purple-300 rounded border border-purple-800/50">
+                            Instant UPI
+                          </span>
+                        </h4>
+                        <p className="text-[11px] text-neutral-400">Direct UPI debit linked to your PhonePe account & Indian bank</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-neutral-500 uppercase block">Total Payable</span>
+                      <span className="font-bold text-purple-400 text-sm">{formatINR(effectiveCartTotal)}</span>
+                    </div>
+                  </div>
+
+                  {/* Linked Indian Bank Selector Component */}
+                  <IndianBankSelector
+                    selectedBankId={formData.selectedBankId}
+                    onSelectBank={handleBankSelect}
+                    paymentApp="phonepe"
+                  />
+
+                  {/* PhonePe UPI ID Input */}
+                  <div className="space-y-2 pt-1 border-t border-neutral-800/70">
+                    <label className="text-neutral-400 uppercase text-[11px] block">
+                      PhonePe UPI ID (Linked to {formData.selectedBankName})
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="phonepeUpiId"
+                        value={formData.phonepeUpiId}
+                        onChange={handleInputChange}
+                        className="w-full p-3 sm:p-2.5 bg-neutral-950 border border-neutral-800 rounded-lg text-white text-base sm:text-xs font-mono focus:outline-none focus:border-purple-400 min-h-[44px]"
+                        placeholder="yourname@ybl or 9820154321@uboi or yourname@barodampay"
+                      />
+                      <Smartphone size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                    </div>
+
+                    {/* Quick Handle Suggestions for PhonePe */}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <span className="text-[10px] text-neutral-500">Quick handles for PhonePe:</span>
+                      {['@ybl', '@uboi', '@barodampay', '@ibl', '@axl'].map((suffix) => (
+                        <button
+                          key={suffix}
+                          type="button"
+                          onClick={() => {
+                            const base = formData.phonepeUpiId.includes('@')
+                              ? formData.phonepeUpiId.split('@')[0]
+                              : (formData.phonepeUpiId || 'arjun');
+                            setFormData({ ...formData, phonepeUpiId: `${base}${suffix}` });
+                          }}
+                          className={`px-2 py-0.5 text-[10px] rounded border transition-colors cursor-pointer ${
+                            formData.phonepeUpiId.endsWith(suffix)
+                              ? 'bg-purple-500/20 text-purple-300 border-purple-500/60 font-bold'
+                              : 'bg-neutral-800/80 hover:bg-neutral-700 text-neutral-300 border-neutral-700 hover:border-purple-400'
+                          }`}
+                        >
+                          {suffix}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* QR & Security Info */}
+                  <div className="p-3 bg-neutral-900/80 border border-neutral-800 rounded-lg flex items-center justify-between gap-3 text-[11px]">
+                    <div className="flex items-center gap-2 text-neutral-300">
+                      <QrCode size={18} className="text-purple-400 shrink-0" />
+                      <span>PhonePe notification will open the UPI PIN screen on your mobile</span>
+                    </div>
+                    <span className="px-2 py-1 bg-purple-950/60 border border-purple-800/60 text-purple-400 rounded text-[10px] font-bold shrink-0">
+                      NPCI UPI ENCRYPTED
                     </span>
                   </div>
                 </div>
@@ -712,11 +887,17 @@ export const CheckoutModal: React.FC = () => {
                 <div>
                   <span className="text-neutral-500 uppercase text-[10px]">Payment:</span>
                   <p className="text-white font-bold uppercase">
-                    {formData.paymentMethod === 'gpay' ? '2. Google Pay (UPI)' : '1. Cash on Delivery (COD)'}
+                    {formData.paymentMethod === 'gpay'
+                      ? `2. Google Pay (${formData.selectedBankName})`
+                      : formData.paymentMethod === 'phonepe'
+                      ? `3. PhonePe (${formData.selectedBankName})`
+                      : '1. Cash on Delivery (COD)'}
                   </p>
                   <p className="text-neutral-400">
                     {formData.paymentMethod === 'gpay'
-                      ? `Instant UPI debit: ${formatINR(effectiveCartTotal)}`
+                      ? `Instant UPI debit via ${formData.gpayUpiId || 'Google Pay'}: ${formatINR(effectiveCartTotal)}`
+                      : formData.paymentMethod === 'phonepe'
+                      ? `Instant UPI debit via ${formData.phonepeUpiId || 'PhonePe'}: ${formatINR(effectiveCartTotal)}`
                       : `Pay ${formatINR(effectiveCartTotal)} in cash/UPI on arrival`}
                   </p>
                 </div>
@@ -764,12 +945,18 @@ export const CheckoutModal: React.FC = () => {
                   id="checkout-confirm-place-order-btn"
                   type="button"
                   onClick={handlePlaceOrder}
-                  className="w-full sm:w-auto px-8 py-3.5 bg-cyan-400 hover:bg-cyan-300 text-black font-display font-black text-xs uppercase tracking-wider rounded transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-cyan-500/20 min-h-[46px]"
+                  className={`w-full sm:w-auto px-8 py-3.5 text-black font-display font-black text-xs uppercase tracking-wider rounded transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg min-h-[46px] ${
+                    formData.paymentMethod === 'phonepe'
+                      ? 'bg-purple-400 hover:bg-purple-300 shadow-purple-500/20'
+                      : 'bg-cyan-400 hover:bg-cyan-300 shadow-cyan-500/20'
+                  }`}
                 >
                   <Lock size={14} />
                   <span>
                     {formData.paymentMethod === 'gpay'
                       ? `PAY VIA GOOGLE PAY (${formatINR(effectiveCartTotal)})`
+                      : formData.paymentMethod === 'phonepe'
+                      ? `PAY VIA PHONEPE (${formatINR(effectiveCartTotal)})`
                       : `CONFIRM CASH ON DELIVERY ORDER (${formatINR(effectiveCartTotal)})`}
                   </span>
                 </button>

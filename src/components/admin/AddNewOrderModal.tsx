@@ -528,9 +528,21 @@ export const AddNewOrderModal: React.FC<AddNewOrderModalProps> = ({
                 >
                   <option value="Cash on delivery (COD)">1. Cash on delivery (COD)</option>
                   <option value="Google Pay (GPay UPI)">2. Google Pay (GPay UPI)</option>
-                  <option value="UPI / PhonePe / Paytm">UPI / PhonePe / Paytm</option>
-                  <option value="Credit / Debit Card">Credit / Debit Card</option>
-                  <option value="Direct Admin Cash">Direct Admin Cash / Walk-in</option>
+                  <option value="PhonePe (Phone Pay / P-Pay)">3. PhonePe (Phone Pay / P-Pay)</option>
+                  <optgroup label="Google Pay Linked Banks">
+                    <option value="Google Pay • Corporation Bank">Google Pay • Corporation Bank</option>
+                    <option value="Google Pay • Union Bank of India">Google Pay • Union Bank of India</option>
+                    <option value="Google Pay • Bank of Baroda">Google Pay • Bank of Baroda</option>
+                  </optgroup>
+                  <optgroup label="PhonePe (P-Pay) Linked Banks">
+                    <option value="PhonePe • Corporation Bank">PhonePe • Corporation Bank</option>
+                    <option value="PhonePe • Union Bank of India">PhonePe • Union Bank of India</option>
+                    <option value="PhonePe • Bank of Baroda">PhonePe • Bank of Baroda</option>
+                  </optgroup>
+                  <optgroup label="Other Payment Modes">
+                    <option value="Credit / Debit Card">Credit / Debit Card</option>
+                    <option value="Direct Admin Cash">Direct Admin Cash / Walk-in</option>
+                  </optgroup>
                 </select>
               </div>
 

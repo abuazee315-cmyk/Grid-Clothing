@@ -341,7 +341,7 @@ export const StorefrontView: React.FC = () => {
                 &ldquo;Classic Form. Premium Feel.&rdquo;
               </p>
               <p className="text-[11px] leading-relaxed text-neutral-500">
-                Architectural streetwear atelier. Established 2024. All garments designed and numbered in limited batch productions.
+                Structured streetwear and premium essentials. Defined by clean lines and limited-batch production.
               </p>
             </div>
 
@@ -356,12 +356,12 @@ export const StorefrontView: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <h5 className="font-bold text-white text-[11px] uppercase tracking-wider">Atelier Locations</h5>
-              <ul className="space-y-1 text-[11px] text-neutral-500">
-                <li>INDIA: Connaught Place, New Delhi</li>
-                <li>KERALA: Marine Drive Atelier, Kochi</li>
-                <li>KARNATAKA: Indiranagar Flagship, Bengaluru</li>
-              </ul>
+              <h5 className="font-bold text-white text-[11px] uppercase tracking-wider">Atelier Location</h5>
+              <div className="space-y-1 text-[11px] text-neutral-400 font-mono">
+                <p className="text-white font-medium">School road, Nellihudikeri</p>
+                <p>Kodagu, Karnataka - 571253</p>
+                <p className="text-[10px] text-neutral-500 pt-0.5">India Flagship Atelier</p>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -369,9 +369,30 @@ export const StorefrontView: React.FC = () => {
               <p className="text-[11px] text-neutral-500">
                 Track shipments, view orders, and manage client profile.
               </p>
-              <div className="text-[10px] font-mono text-neutral-400 space-y-0.5 pt-0.5">
-                <div>Web: <span className="text-cyan-400 font-bold">gridclothing.ai</span></div>
-                <div>Support: <span className="text-neutral-300">care@gridclothing.ai</span></div>
+              <div className="text-[10px] font-mono text-neutral-400 space-y-1 pt-0.5">
+                <div>
+                  Web:{' '}
+                  <a
+                    href="https://grid-clothing.vercel.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-cyan-400 font-bold hover:underline transition-colors inline-flex items-center gap-1"
+                  >
+                    <span>https://grid-clothing.vercel.app/</span>
+                  </a>
+                </div>
+                <div>
+                  Support:{' '}
+                  <a
+                    href="https://www.delhivery.com/tracking"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-neutral-300 hover:text-white hover:underline transition-colors inline-flex items-center gap-1"
+                    title="Track package via Delhivery"
+                  >
+                    <span>Delhivery Tracking Page ↗</span>
+                  </a>
+                </div>
               </div>
               <button
                 onClick={() => {

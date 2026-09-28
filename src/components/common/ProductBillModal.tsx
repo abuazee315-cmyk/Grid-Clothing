@@ -115,13 +115,13 @@ export const ProductBillModal: React.FC<ProductBillModalProps> = ({
                     Architectural Heavyweight Garments & Streetwear Co.
                   </p>
                   <p className="text-[11px] text-neutral-500 mt-0.5">
-                    Fulfillment Hubs: New Delhi • Bengaluru • Kochi, India
+                    Atelier: School road, Nellihudikeri, Kodagu, Karnataka - 571253
                   </p>
                   <p className="text-[11px] text-neutral-500 font-mono mt-0.5">
                     GSTIN: <strong>29AAACG8921P1Z9</strong> • IEC: 0518920199
                   </p>
                   <p className="text-[11px] text-neutral-500 font-mono">
-                    Email: support@gridclothing.ai • Web: gridclothing.ai
+                    Email: support@gridclothing.ai • Web: grid-clothing.vercel.app
                   </p>
                 </div>
               </div>

@@ -13,6 +13,8 @@ export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(defa
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
 
 // Test Firestore connection on boot as mandated
 export async function testFirestoreConnection(): Promise<boolean> {

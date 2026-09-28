@@ -8,7 +8,7 @@ import {
   onSnapshot,
   writeBatch,
 } from 'firebase/firestore';
-import { signInWithPopup, signOut as firebaseSignOut } from 'firebase/auth';
+import { signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
 import { db, auth, googleProvider } from '../firebase';
 import {
   Product,
@@ -83,7 +83,14 @@ interface StoreContextType {
     country?: string;
   }) => { success: boolean; error?: string };
   customerSignOut: () => void;
-  customerSignInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
+  customerSignInWithGoogle: () => Promise<{
+    success: boolean;
+    error?: string;
+    errorCode?: string;
+    unauthorizedDomain?: string;
+    firebaseConsoleUrl?: string;
+  }>;
+  customerDirectEmailSignIn: (email: string, name?: string) => { success: boolean; error?: string };
   isGoogleSigningIn: boolean;
   updateCustomerProfile: (updates: Partial<CustomerUser>) => void;
   customerOrders: Order[];
@@ -132,6 +139,7 @@ interface StoreContextType {
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
   updateOrderDates: (orderId: string, dates: { createdAt?: string; dispatchDate?: string }) => void;
   updateOrder: (orderId: string, updates: Partial<Order>) => void;
+  deleteOrder: (orderId: string) => Promise<boolean>;
 
   // Analytics
   kpis: StoreKPIs;
@@ -426,7 +434,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           } catch (err) {
             console.warn('[Firestore] Error seeding initial orders:', err);
           }
-        } else if (!snapshot.empty) {
+        } else {
           isInitial = false;
           const items: Order[] = [];
           snapshot.forEach((d) => {
@@ -553,8 +561,51 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
 
-  const customerSignInWithGoogle = async (): Promise<{ success: boolean; error?: string }> => {
+  // Sync Firebase Auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user && user.email) {
+        const email = user.email.trim().toLowerCase();
+        const displayName = user.displayName || email.split('@')[0] || 'Client';
+
+        if (email === 'gridclothig1@gmail.com' || email === 'gridclothing1@gmail.com') {
+          setIsAdminAuthenticated(true);
+        }
+
+        setCustomerAccounts((prev) => {
+          const exists = prev.find((acc) => acc.email.toLowerCase() === email);
+          if (exists) {
+            const { password: _, ...userProfile } = exists;
+            setCurrentCustomer(userProfile);
+            return prev;
+          }
+          const newAccount: CustomerAccount = {
+            id: `cust_${user.uid}`,
+            name: displayName,
+            email: email,
+            phone: user.phoneNumber || '',
+            createdAt: new Date().toISOString(),
+          };
+          const { password: _, ...userProfile } = newAccount;
+          setCurrentCustomer(userProfile);
+          return [...prev, newAccount];
+        });
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const customerSignInWithGoogle = async (): Promise<{
+    success: boolean;
+    error?: string;
+    errorCode?: string;
+    unauthorizedDomain?: string;
+    firebaseConsoleUrl?: string;
+  }> => {
     setIsGoogleSigningIn(true);
+    const currentDomain = typeof window !== 'undefined' ? window.location.hostname : '';
+    const consoleSettingsUrl = 'https://console.firebase.google.com/project/hale-plane-7xfb9/authentication/settings';
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
@@ -593,22 +644,81 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return { success: true };
     } catch (err: unknown) {
       console.error('[Google Sign-In Error]', err);
+      let errorCode = 'unknown';
       let message = 'Failed to sign in with Google.';
+      let isUnauthorized = false;
+
+      if (typeof err === 'object' && err !== null && 'code' in err) {
+        errorCode = String((err as any).code);
+      }
+
       if (err instanceof Error) {
-        if (err.message.includes('popup-closed-by-user')) {
+        const lower = err.message.toLowerCase();
+        if (lower.includes('unauthorized-domain') || errorCode === 'auth/unauthorized-domain') {
+          errorCode = 'auth/unauthorized-domain';
+          isUnauthorized = true;
+          message = `Firebase domain "${currentDomain}" is not authorized.`;
+        } else if (lower.includes('operation-not-allowed') || errorCode === 'auth/operation-not-allowed') {
+          errorCode = 'auth/operation-not-allowed';
+          message = 'Google Sign-In is not enabled in Firebase Authentication.';
+        } else if (lower.includes('popup-closed-by-user') || errorCode === 'auth/popup-closed-by-user') {
+          errorCode = 'auth/popup-closed-by-user';
           message = 'Google sign-in popup was closed before completing.';
-        } else if (err.message.includes('popup-blocked')) {
-          message = 'Google sign-in popup was blocked by the browser. Please allow popups for this site.';
-        } else if (err.message.includes('cancelled-popup-request')) {
+        } else if (lower.includes('popup-blocked') || errorCode === 'auth/popup-blocked') {
+          errorCode = 'auth/popup-blocked';
+          message = 'Google sign-in popup was blocked by browser. Please allow popups for this site.';
+        } else if (lower.includes('cancelled-popup-request') || errorCode === 'auth/cancelled-popup-request') {
+          errorCode = 'auth/cancelled-popup-request';
           message = 'Previous sign-in request was cancelled.';
         } else {
           message = err.message;
         }
       }
-      return { success: false, error: message };
+
+      return {
+        success: false,
+        error: message,
+        errorCode,
+        unauthorizedDomain: isUnauthorized ? currentDomain : undefined,
+        firebaseConsoleUrl: consoleSettingsUrl,
+      };
     } finally {
       setIsGoogleSigningIn(false);
     }
+  };
+
+  const customerDirectEmailSignIn = (emailInput: string, nameInput?: string): { success: boolean; error?: string } => {
+    const email = emailInput.trim().toLowerCase();
+    if (!email || !email.includes('@')) {
+      return { success: false, error: 'Please enter a valid email address.' };
+    }
+    const displayName = nameInput?.trim() || email.split('@')[0] || 'Client';
+
+    // Check if admin email
+    if (email === 'gridclothig1@gmail.com' || email === 'gridclothing1@gmail.com') {
+      setIsAdminAuthenticated(true);
+    }
+
+    const existingAccount = customerAccounts.find((acc) => acc.email.toLowerCase() === email);
+    if (existingAccount) {
+      const { password: _, ...userProfile } = existingAccount;
+      setCurrentCustomer(userProfile);
+    } else {
+      const newAccount: CustomerAccount = {
+        id: `cust_${Date.now()}`,
+        name: displayName,
+        email: email,
+        phone: '',
+        createdAt: new Date().toISOString(),
+      };
+      setCustomerAccounts((prev) => [...prev, newAccount]);
+      const { password: _, ...userProfile } = newAccount;
+      setCurrentCustomer(userProfile);
+    }
+
+    setIsCustomerAuthOpen(false);
+    triggerNotification(`Signed in as ${displayName}!`);
+    return { success: true };
   };
 
   const customerSignOut = () => {
@@ -1034,6 +1144,40 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     triggerNotification('Order updated.');
   };
 
+  const deleteOrder = async (orderId: string): Promise<boolean> => {
+    try {
+      // 1. Immediately remove from local state & sync to local storage
+      setOrders((prev) => {
+        const next = prev.filter((o) => o.id !== orderId);
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY_ORDERS, JSON.stringify(next));
+        } catch {
+          // ignore
+        }
+        return next;
+      });
+
+      // 2. Delete document from Firestore
+      await deleteDoc(doc(db, 'orders', orderId));
+      triggerNotification('Order deleted permanently.');
+      return true;
+    } catch (err) {
+      console.warn('[Firestore] deleteOrder sync error:', err);
+      // Fallback state update
+      setOrders((prev) => {
+        const next = prev.filter((o) => o.id !== orderId);
+        try {
+          localStorage.setItem(LOCAL_STORAGE_KEY_ORDERS, JSON.stringify(next));
+        } catch {
+          // ignore
+        }
+        return next;
+      });
+      triggerNotification('Order deleted permanently.');
+      return true;
+    }
+  };
+
   // Reset to defaults
   const resetStoreData = () => {
     setProducts(INITIAL_PRODUCTS);
@@ -1193,6 +1337,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         customerSignUp,
         customerSignOut,
         customerSignInWithGoogle,
+        customerDirectEmailSignIn,
         isGoogleSigningIn,
         updateCustomerProfile,
         customerOrders,
@@ -1214,6 +1359,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateOrderStatus,
         updateOrderDates,
         updateOrder,
+        deleteOrder,
         kpis,
         monthlyFinancials,
         categoryPerformance,

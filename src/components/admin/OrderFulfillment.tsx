@@ -16,6 +16,7 @@ import {
   Edit2,
   Printer,
   Plus,
+  Trash2,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { Order, OrderStatus } from '../../types';
@@ -25,13 +26,15 @@ import { OrderDateEditModal } from './OrderDateEditModal';
 import { AddNewOrderModal } from './AddNewOrderModal';
 
 export const OrderFulfillment: React.FC = () => {
-  const { orders, updateOrderStatus, updateOrderDates, openPrintBill } = useStore();
+  const { orders, updateOrderStatus, updateOrderDates, openPrintBill, deleteOrder } = useStore();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [editingDatesOrder, setEditingDatesOrder] = useState<Order | null>(null);
   const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+  const [isDeletingOrder, setIsDeletingOrder] = useState(false);
 
   // Inspector internal date editing state
   const [inspectorOrderDate, setInspectorOrderDate] = useState('');
@@ -310,6 +313,13 @@ export const OrderFulfillment: React.FC = () => {
                           <Eye size={12} />
                           <span>Inspect</span>
                         </button>
+                        <button
+                          onClick={() => setOrderToDelete(order)}
+                          className="p-1.5 rounded bg-neutral-800 hover:bg-rose-950/70 hover:text-rose-400 border border-neutral-700 hover:border-rose-800 text-neutral-400 text-xs font-mono transition-colors inline-flex items-center cursor-pointer"
+                          title="Delete Order Permanently"
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -540,17 +550,32 @@ export const OrderFulfillment: React.FC = () => {
             </div>
 
             <div className="p-4 bg-neutral-900/60 border-t border-neutral-800 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => openPrintBill(selectedOrder)}
-                className="px-4 py-2 bg-white hover:bg-neutral-200 text-black font-mono font-bold text-xs uppercase rounded transition-colors flex items-center gap-2 cursor-pointer shadow"
-              >
-                <Printer size={14} />
-                <span>Print Products Bill</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openPrintBill(selectedOrder)}
+                  className="px-4 py-2 bg-white hover:bg-neutral-200 text-black font-mono font-bold text-xs uppercase rounded transition-colors flex items-center gap-2 cursor-pointer shadow"
+                >
+                  <Printer size={14} />
+                  <span>Print Products Bill</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const toDelete = selectedOrder;
+                    setSelectedOrder(null);
+                    setOrderToDelete(toDelete);
+                  }}
+                  className="px-3 py-2 bg-rose-950/50 hover:bg-rose-900/80 border border-rose-800 text-rose-300 font-mono font-bold text-xs uppercase rounded transition-colors flex items-center gap-1.5 cursor-pointer"
+                  title="Delete this order record permanently"
+                >
+                  <Trash2 size={13} />
+                  <span>Delete Order</span>
+                </button>
+              </div>
               <button
                 onClick={() => setSelectedOrder(null)}
-                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded text-xs font-mono"
+                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded text-xs font-mono cursor-pointer"
               >
                 Close Inspector
               </button>
@@ -575,6 +600,50 @@ export const OrderFulfillment: React.FC = () => {
           if (ord) setSelectedOrder(ord);
         }}
       />
+
+      {/* Order Deletion Confirmation Modal */}
+      {orderToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <div className="flex items-center gap-3 text-rose-400">
+              <div className="w-10 h-10 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center shrink-0">
+                <Trash2 size={20} />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-base text-white">DELETE ORDER RECORD</h3>
+                <p className="text-xs text-neutral-400 font-mono">{orderToDelete.orderNumber}</p>
+              </div>
+            </div>
+            <p className="text-xs text-neutral-300">
+              Are you sure you want to permanently delete order <strong className="text-white">{orderToDelete.orderNumber}</strong> ({orderToDelete.customerName})? This removes the order record from the live Firestore database and store financial metrics.
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={isDeletingOrder}
+                onClick={() => setOrderToDelete(null)}
+                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-mono text-xs rounded transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingOrder}
+                onClick={async () => {
+                  setIsDeletingOrder(true);
+                  const id = orderToDelete.id;
+                  await deleteOrder(id);
+                  setIsDeletingOrder(false);
+                  setOrderToDelete(null);
+                }}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-mono font-bold text-xs uppercase rounded transition-colors cursor-pointer shadow-lg shadow-rose-900/40 disabled:opacity-50"
+              >
+                {isDeletingOrder ? 'Deleting...' : 'Delete Permanently'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

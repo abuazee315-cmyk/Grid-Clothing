@@ -21,6 +21,12 @@ import {
   ArrowRight,
   Printer,
   Delete,
+  Trash2,
+  Copy,
+  Check,
+  AlertTriangle,
+  Globe,
+  Sparkles,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { formatINR } from '../../utils/currency';
@@ -51,6 +57,7 @@ export const CustomerAuthModal: React.FC = () => {
     updateCustomerProfile,
     customerOrders,
     customerSignInWithGoogle,
+    customerDirectEmailSignIn,
     isGoogleSigningIn,
     setIsCartOpen,
     isAdminAuthenticated,
@@ -58,6 +65,7 @@ export const CustomerAuthModal: React.FC = () => {
     setActiveMode,
     logoutAdmin,
     openPrintBill,
+    deleteOrder,
   } = useStore();
 
   // iPhone Passcode Security Gate State for Admin (Email: gridclothig1@gmail.com, Passcode: 9740330344)
@@ -86,6 +94,16 @@ export const CustomerAuthModal: React.FC = () => {
   const [signUpCountry, setSignUpCountry] = useState('India');
   const [signUpError, setSignUpError] = useState<string | null>(null);
   const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
+  const [googleAuthDetails, setGoogleAuthDetails] = useState<{
+    message: string;
+    errorCode?: string;
+    unauthorizedDomain?: string;
+    firebaseConsoleUrl?: string;
+  } | null>(null);
+  const [copiedDomain, setCopiedDomain] = useState(false);
+  const [instantEmail, setInstantEmail] = useState('abuazee315@gmail.com');
+  const [customerOrderToDelete, setCustomerOrderToDelete] = useState<any>(null);
+  const [isDeletingCustomerOrder, setIsDeletingCustomerOrder] = useState(false);
 
   // Profile Edit State
   const [profileName, setProfileName] = useState('');
@@ -114,6 +132,7 @@ export const CustomerAuthModal: React.FC = () => {
     setSignInError(null);
     setSignUpError(null);
     setGoogleAuthError(null);
+    setGoogleAuthDetails(null);
   }, [customerAuthTab]);
 
   useEffect(() => {
@@ -126,18 +145,272 @@ export const CustomerAuthModal: React.FC = () => {
       setSignInError(null);
       setSignUpError(null);
       setGoogleAuthError(null);
+      setGoogleAuthDetails(null);
     }
   }, [isCustomerAuthOpen]);
 
-  // Google Sign In action
+  // Google Sign In action with rich diagnostics
   const handleGoogleSignIn = async () => {
     setGoogleAuthError(null);
+    setGoogleAuthDetails(null);
     setSignInError(null);
     setSignUpError(null);
     const result = await customerSignInWithGoogle();
     if (!result.success && result.error) {
       setGoogleAuthError(result.error);
+      const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+      setGoogleAuthDetails({
+        message: result.error,
+        errorCode: result.errorCode,
+        unauthorizedDomain:
+          result.unauthorizedDomain ||
+          (result.errorCode === 'auth/unauthorized-domain' ? currentHost : undefined),
+        firebaseConsoleUrl:
+          result.firebaseConsoleUrl ||
+          'https://console.firebase.google.com/project/hale-plane-7xfb9/authentication/settings',
+      });
     }
+  };
+
+  const handleCopyDomain = (domainToCopy: string) => {
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(domainToCopy);
+      setCopiedDomain(true);
+      setTimeout(() => setCopiedDomain(false), 2500);
+    }
+  };
+
+  const handleInstantEmailSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!instantEmail.trim()) return;
+    const res = customerDirectEmailSignIn(instantEmail);
+    if (!res.success && res.error) {
+      setSignInError(res.error);
+    } else {
+      setGoogleAuthError(null);
+      setGoogleAuthDetails(null);
+    }
+  };
+
+  const handleQuickEmailLogin = (email: string) => {
+    const res = customerDirectEmailSignIn(email);
+    if (!res.success && res.error) {
+      setSignInError(res.error);
+    } else {
+      setGoogleAuthError(null);
+      setGoogleAuthDetails(null);
+    }
+  };
+
+  // Renders a crystal-clear diagnostic card explaining Firebase Authorized Domains & providing 1-click fallback
+  const renderGoogleAuthDiagnosticHelper = () => {
+    if (!googleAuthError && !googleAuthDetails) return null;
+
+    const currentHostname = typeof window !== 'undefined' ? window.location.hostname : 'current-domain';
+    const isDomainError =
+      googleAuthDetails?.errorCode === 'auth/unauthorized-domain' ||
+      googleAuthError?.toLowerCase().includes('unauthorized-domain') ||
+      googleAuthError?.toLowerCase().includes('not authorized') ||
+      googleAuthError?.toLowerCase().includes('authorized domain');
+
+    const isOperationNotAllowed =
+      googleAuthDetails?.errorCode === 'auth/operation-not-allowed' ||
+      googleAuthError?.toLowerCase().includes('operation-not-allowed');
+
+    const isPopupBlocked =
+      googleAuthDetails?.errorCode === 'auth/popup-blocked' ||
+      googleAuthError?.toLowerCase().includes('popup-blocked');
+
+    const targetDomain = googleAuthDetails?.unauthorizedDomain || currentHostname;
+    const consoleSettingsUrl =
+      googleAuthDetails?.firebaseConsoleUrl ||
+      'https://console.firebase.google.com/project/hale-plane-7xfb9/authentication/settings';
+    const consoleProvidersUrl =
+      'https://console.firebase.google.com/project/hale-plane-7xfb9/authentication/providers';
+
+    return (
+      <div className="p-3.5 bg-neutral-900 border border-amber-500/40 rounded-xl space-y-3 font-mono text-left animate-fade-in shadow-xl shadow-black/40">
+        {/* Error Badge & Header */}
+        <div className="flex items-start justify-between gap-2 border-b border-neutral-800 pb-2.5">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+              <AlertTriangle size={14} />
+            </div>
+            <div>
+              <h4 className="font-bold text-xs text-amber-300 uppercase tracking-wide">
+                {isDomainError
+                  ? 'Domain Not Authorized in Firebase'
+                  : isOperationNotAllowed
+                  ? 'Google Auth Provider Not Enabled'
+                  : isPopupBlocked
+                  ? 'Browser Popup Blocked'
+                  : 'Google Sign-In Notice'}
+              </h4>
+              <p className="text-[10px] text-neutral-400 font-sans mt-0.5">
+                {isDomainError
+                  ? 'Firebase requires preview domains to be registered in your Firebase project console.'
+                  : isOperationNotAllowed
+                  ? 'Google sign-in is disabled in your Firebase console settings.'
+                  : isPopupBlocked
+                  ? 'Browser blocked the login popup window.'
+                  : googleAuthError}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setGoogleAuthError(null);
+              setGoogleAuthDetails(null);
+            }}
+            className="text-neutral-500 hover:text-white p-1 rounded hover:bg-neutral-800"
+            title="Dismiss notice"
+          >
+            <X size={13} />
+          </button>
+        </div>
+
+        {/* Detailed fix for Domain Authorization */}
+        {isDomainError && (
+          <div className="space-y-2.5 text-[11px]">
+            <div className="bg-black/60 rounded-lg p-2.5 border border-neutral-800 space-y-1.5">
+              <div className="flex items-center justify-between text-[10px] text-neutral-400 uppercase">
+                <span className="flex items-center gap-1 text-cyan-400">
+                  <Globe size={11} />
+                  Your App Domain to Add:
+                </span>
+                <span className="text-[9px] text-neutral-500">Firebase: hale-plane-7xfb9</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-neutral-950 px-2.5 py-1.5 rounded border border-neutral-800 text-white font-mono text-[11px] truncate select-all">
+                  {targetDomain}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => handleCopyDomain(targetDomain)}
+                  className={`px-3 py-1.5 rounded text-[11px] font-bold transition-all flex items-center gap-1 shrink-0 cursor-pointer ${
+                    copiedDomain
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                      : 'bg-neutral-800 hover:bg-neutral-700 text-cyan-400 border border-neutral-700'
+                  }`}
+                >
+                  {copiedDomain ? (
+                    <>
+                      <Check size={12} />
+                      <span>Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={12} />
+                      <span>Copy Domain</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Step-by-Step Instructions */}
+            <div className="bg-neutral-950/60 rounded-lg p-2.5 border border-neutral-800/80 space-y-1.5 text-[10px] text-neutral-300">
+              <span className="font-bold text-neutral-200 block uppercase tracking-wider text-[9px]">
+                How to resolve in 1 minute:
+              </span>
+              <ol className="list-decimal list-inside space-y-1 text-neutral-400">
+                <li>
+                  Click the button below to open Firebase Console Authorized Domains:
+                </li>
+                <li className="pl-1">
+                  In <strong className="text-white">Authorized domains</strong>, click{' '}
+                  <strong className="text-white">Add domain</strong>
+                </li>
+                <li className="pl-1">
+                  Paste <code className="text-cyan-400 font-bold">{targetDomain}</code> and click{' '}
+                  <strong className="text-white">Save</strong>
+                </li>
+                <li className="pl-1">
+                  Return here and click <strong className="text-white">Sign in with Google</strong>
+                </li>
+              </ol>
+
+              <a
+                href={consoleSettingsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center justify-center gap-1.5 w-full py-1.5 px-3 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 rounded font-bold text-[11px] transition-colors"
+              >
+                <span>Open Firebase Authorized Domains Settings</span>
+                <ExternalLink size={12} />
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* Detailed fix for Operation Not Allowed */}
+        {isOperationNotAllowed && (
+          <div className="space-y-2 text-[10px] text-neutral-300">
+            <p className="text-neutral-400">
+              In Firebase Console, go to <strong>Authentication &gt; Sign-in method</strong>, choose{' '}
+              <strong>Google</strong>, enable it and save.
+            </p>
+            <a
+              href={consoleProvidersUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center gap-1.5 w-full py-1.5 px-3 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 rounded font-bold text-[11px] transition-colors"
+            >
+              <span>Open Firebase Sign-In Providers Settings</span>
+              <ExternalLink size={12} />
+            </a>
+          </div>
+        )}
+
+        {/* Instant Access Alternative (No Firebase Setup Needed) */}
+        <div className="border-t border-neutral-800 pt-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1">
+              <Sparkles size={11} className="text-cyan-400" />
+              <span>Instant Access (No Firebase Setup Needed)</span>
+            </span>
+            <span className="text-[9px] text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+              Instant
+            </span>
+          </div>
+          <p className="text-[10px] text-neutral-400 font-sans">
+            Sign in immediately to view your orders, address, and checkout:
+          </p>
+
+          <form onSubmit={handleInstantEmailSubmit} className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Mail size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500" />
+                <input
+                  type="email"
+                  required
+                  value={instantEmail}
+                  onChange={(e) => setInstantEmail(e.target.value)}
+                  placeholder="name@gmail.com"
+                  className="w-full pl-8 pr-2.5 py-1.5 bg-neutral-950 border border-neutral-700 focus:border-cyan-400 rounded text-white text-[11px] font-mono focus:outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                className="py-1.5 px-3 bg-cyan-400 hover:bg-cyan-300 text-black font-display font-black text-[11px] uppercase tracking-wider rounded transition-colors cursor-pointer shrink-0"
+              >
+                Sign In Now
+              </button>
+            </div>
+            {instantEmail.toLowerCase() !== 'abuazee315@gmail.com' && (
+              <button
+                type="button"
+                onClick={() => handleQuickEmailLogin('abuazee315@gmail.com')}
+                className="text-[10px] text-cyan-400 hover:text-cyan-300 underline font-mono cursor-pointer block mt-1"
+              >
+                Or 1-click continue as abuazee315@gmail.com →
+              </button>
+            )}
+          </form>
+        </div>
+      </div>
+    );
   };
 
   // iPhone Passcode Verification Logic
@@ -440,11 +713,7 @@ export const CustomerAuthModal: React.FC = () => {
                   </span>
                 </button>
 
-                {googleAuthError && (
-                  <div className="p-2.5 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-300 text-xs font-mono text-center">
-                    {googleAuthError}
-                  </div>
-                )}
+                {renderGoogleAuthDiagnosticHelper()}
 
                 <div className="relative flex items-center justify-center my-2">
                   <div className="border-t border-neutral-800 w-full"></div>
@@ -565,11 +834,7 @@ export const CustomerAuthModal: React.FC = () => {
                   </span>
                 </button>
 
-                {googleAuthError && (
-                  <div className="p-2.5 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-300 text-xs font-mono text-center">
-                    {googleAuthError}
-                  </div>
-                )}
+                {renderGoogleAuthDiagnosticHelper()}
 
                 <div className="relative flex items-center justify-center my-2">
                   <div className="border-t border-neutral-800 w-full"></div>
@@ -957,19 +1222,74 @@ export const CustomerAuthModal: React.FC = () => {
                             </span>
                           </span>
 
-                          <button
-                            type="button"
-                            onClick={() => openPrintBill(order)}
-                            className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 hover:text-white text-cyan-400 font-bold rounded border border-neutral-700 transition-colors flex items-center gap-1.5 cursor-pointer"
-                            title="Print Products Bill / Tax Invoice"
-                          >
-                            <Printer size={13} />
-                            <span>Print Bill</span>
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setCustomerOrderToDelete(order)}
+                              className="px-2.5 py-1.5 bg-neutral-800 hover:bg-rose-950/60 hover:text-rose-400 hover:border-rose-800 text-neutral-400 font-bold rounded border border-neutral-700 transition-colors flex items-center gap-1 cursor-pointer"
+                              title="Delete this order record permanently"
+                            >
+                              <Trash2 size={12} />
+                              <span>Delete</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openPrintBill(order)}
+                              className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 hover:text-white text-cyan-400 font-bold rounded border border-neutral-700 transition-colors flex items-center gap-1.5 cursor-pointer"
+                              title="Print Products Bill / Tax Invoice"
+                            >
+                              <Printer size={13} />
+                              <span>Print Bill</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* Customer Order Deletion Confirmation Modal */}
+              {customerOrderToDelete && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+                  <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 max-w-sm w-full space-y-3.5 shadow-2xl">
+                    <div className="flex items-center gap-3 text-rose-400">
+                      <div className="w-10 h-10 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center shrink-0">
+                        <Trash2 size={18} />
+                      </div>
+                      <div>
+                        <h3 className="font-display font-bold text-sm text-white">DELETE ORDER RECORD</h3>
+                        <p className="text-[11px] text-neutral-400 font-mono">{customerOrderToDelete.orderNumber}</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-neutral-300">
+                      Are you sure you want to permanently delete order <strong className="text-white">{customerOrderToDelete.orderNumber}</strong>? It will be removed from your customer archive and the store database.
+                    </p>
+                    <div className="flex items-center justify-end gap-2.5 pt-1">
+                      <button
+                        type="button"
+                        disabled={isDeletingCustomerOrder}
+                        onClick={() => setCustomerOrderToDelete(null)}
+                        className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-mono text-xs rounded transition-colors cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isDeletingCustomerOrder}
+                        onClick={async () => {
+                          setIsDeletingCustomerOrder(true);
+                          const id = customerOrderToDelete.id;
+                          await deleteOrder(id);
+                          setIsDeletingCustomerOrder(false);
+                          setCustomerOrderToDelete(null);
+                        }}
+                        className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-mono font-bold text-xs uppercase rounded transition-colors cursor-pointer shadow-lg shadow-rose-900/40 disabled:opacity-50"
+                      >
+                        {isDeletingCustomerOrder ? 'Deleting...' : 'Delete Permanently'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

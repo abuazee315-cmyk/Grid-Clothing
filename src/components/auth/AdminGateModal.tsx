@@ -11,10 +11,10 @@ import {
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 
-export const AdminPasscodeModal: React.FC = () => {
+export const AdminGateModal: React.FC = () => {
   const {
-    isAdminPasscodeModalOpen,
-    setIsAdminPasscodeModalOpen,
+    isAdminGateModalOpen,
+    setIsAdminGateModalOpen,
     adminPasscodeError,
     verifyAdminPasscode,
     setActiveMode,
@@ -26,15 +26,15 @@ export const AdminPasscodeModal: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isAdminPasscodeModalOpen) {
+    if (isAdminGateModalOpen) {
       setPasscode('');
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
     }
-  }, [isAdminPasscodeModalOpen]);
+  }, [isAdminGateModalOpen]);
 
-  if (!isAdminPasscodeModalOpen) return null;
+  if (!isAdminGateModalOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +54,7 @@ export const AdminPasscodeModal: React.FC = () => {
   };
 
   const handleCancel = () => {
-    setIsAdminPasscodeModalOpen(false);
+    setIsAdminGateModalOpen(false);
     setActiveMode('storefront');
   };
 

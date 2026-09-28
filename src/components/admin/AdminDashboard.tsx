@@ -30,6 +30,7 @@ import {
 import { useStore } from '../../context/StoreContext';
 import { Order, OrderStatus } from '../../types';
 import { formatINR, formatINRCompact } from '../../utils/currency';
+import { getBillPaymentInfo } from '../../utils/paymentUtils';
 import { OrderDateEditModal } from './OrderDateEditModal';
 
 export const AdminDashboard: React.FC = () => {
@@ -390,7 +391,12 @@ export const AdminDashboard: React.FC = () => {
                       {order.items.reduce((s, i) => s + i.quantity, 0)} pcs (
                       {order.items[0]?.productName.slice(0, 18)}...)
                     </td>
-                    <td className="py-3 px-3 font-bold text-white">{formatINR(order.total)}</td>
+                    <td className="py-3 px-3">
+                      <span className="font-bold text-white block">{formatINR(order.total)}</span>
+                      <span className="text-[10px] text-neutral-400 font-mono">
+                        Bill: <strong className="text-cyan-400">{getBillPaymentInfo(order.paymentMethod).billLabel}</strong>
+                      </span>
+                    </td>
                     {/* Date of Ordered */}
                     <td className="py-3 px-3">
                       <span className="flex items-center gap-1.5 text-neutral-300">

@@ -93,8 +93,8 @@ interface StoreContextType {
   adminPasscodeError: string | null;
   verifyAdminPasscode: (passcode: string) => boolean;
   logoutAdmin: () => void;
-  isAdminPasscodeModalOpen: boolean;
-  setIsAdminPasscodeModalOpen: (open: boolean) => void;
+  isAdminGateModalOpen: boolean;
+  setIsAdminGateModalOpen: (open: boolean) => void;
   requestAdminAccess: () => void;
 
   // Checkout
@@ -173,23 +173,7 @@ const INITIAL_DELIVERY_SETTINGS: DeliverySettings = {
   expressCourierName: 'FedEx / Bluedart Express',
 };
 
-const INITIAL_DEMO_CUSTOMERS: CustomerAccount[] = [
-  {
-    id: 'cust_demo_01',
-    name: 'Arjun Mehta',
-    email: 'arjun@gridclothing.ai',
-    password: 'customer123',
-    phone: '+91 98765 43210',
-    savedAddress: {
-      street: 'Flat 4B, Sky Towers, 12th Main',
-      city: 'Bengaluru',
-      state: 'Karnataka',
-      zip: '560038',
-      country: 'India',
-    },
-    createdAt: '2026-08-15T10:00:00Z',
-  },
-];
+const INITIAL_CUSTOMERS: CustomerAccount[] = [];
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Navigation
@@ -212,16 +196,37 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [customerAccounts, setCustomerAccounts] = useState<CustomerAccount[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY_CUSTOMERS);
-      return saved ? JSON.parse(saved) : INITIAL_DEMO_CUSTOMERS;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(
+            (c: CustomerAccount) =>
+              c.email !== 'arjun@gridclothing.ai' &&
+              c.id !== 'cust_01'
+          );
+        }
+      }
+      return INITIAL_CUSTOMERS;
     } catch {
-      return INITIAL_DEMO_CUSTOMERS;
+      return INITIAL_CUSTOMERS;
     }
   });
 
   const [currentCustomer, setCurrentCustomer] = useState<CustomerUser | null>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY_CURRENT_CUSTOMER);
-      return saved ? JSON.parse(saved) : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (
+          parsed?.email === 'arjun@gridclothing.ai' ||
+          parsed?.id === 'cust_01'
+        ) {
+          localStorage.removeItem(LOCAL_STORAGE_KEY_CURRENT_CUSTOMER);
+          return null;
+        }
+        return parsed;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -239,7 +244,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   });
   const [adminPasscodeError, setAdminPasscodeError] = useState<string | null>(null);
-  const [isAdminPasscodeModalOpen, setIsAdminPasscodeModalOpen] = useState(false);
+  const [isAdminGateModalOpen, setIsAdminGateModalOpen] = useState(false);
 
   // Core Data
   const [products, setProducts] = useState<Product[]>(() => {
@@ -641,7 +646,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (clean === ADMIN_PASSCODE || clean === '9740330344' || clean === 'shaadhshaasgri123') {
       setIsAdminAuthenticated(true);
       setAdminPasscodeError(null);
-      setIsAdminPasscodeModalOpen(false);
+      setIsAdminGateModalOpen(false);
       setActiveMode('admin');
       triggerNotification('Admin security verified. Access granted to ERP.');
       return true;
@@ -663,7 +668,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setActiveMode('admin');
     } else {
       setAdminPasscodeError(null);
-      setIsAdminPasscodeModalOpen(true);
+      setIsAdminGateModalOpen(true);
     }
   };
 
@@ -1039,7 +1044,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.removeItem(LOCAL_STORAGE_KEY_ORDERS);
     localStorage.removeItem(LOCAL_STORAGE_KEY_CART);
     localStorage.removeItem(LOCAL_STORAGE_KEY_DELIVERY);
-    triggerNotification('Store data reset to initial showcase demo state.');
+    triggerNotification('Store catalog and settings restored to default state.');
   };
 
   // Financial & Analytics Calculations
@@ -1196,8 +1201,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         adminPasscodeError,
         verifyAdminPasscode,
         logoutAdmin,
-        isAdminPasscodeModalOpen,
-        setIsAdminPasscodeModalOpen,
+        isAdminGateModalOpen,
+        setIsAdminGateModalOpen,
         requestAdminAccess,
         createOrder,
         products,

@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { formatINR } from '../../utils/currency';
+import { getBillPaymentInfo } from '../../utils/paymentUtils';
 
 const IPHONE_KEYPAD_DIGITS = [
   { num: '1', letters: '' },
@@ -587,7 +588,7 @@ export const CustomerAuthModal: React.FC = () => {
                       required
                       value={signUpName}
                       onChange={(e) => setSignUpName(e.target.value)}
-                      placeholder="e.g. Arjun Mehta"
+                      placeholder="Your Full Name"
                       className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 focus:border-cyan-400 rounded-lg text-white text-base sm:text-xs font-mono placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 min-h-[44px]"
                     />
                   </div>
@@ -599,7 +600,7 @@ export const CustomerAuthModal: React.FC = () => {
                       inputMode="tel"
                       value={signUpPhone}
                       onChange={(e) => setSignUpPhone(e.target.value)}
-                      placeholder="+91 98765 43210"
+                      placeholder="+91 Mobile Number"
                       className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 focus:border-cyan-400 rounded-lg text-white text-base sm:text-xs font-mono placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 min-h-[44px]"
                     />
                   </div>
@@ -613,7 +614,7 @@ export const CustomerAuthModal: React.FC = () => {
                     required
                     value={signUpEmail}
                     onChange={(e) => setSignUpEmail(e.target.value)}
-                    placeholder="arjun@domain.com"
+                    placeholder="name@domain.com"
                     className="w-full px-3 py-2 bg-neutral-900 border border-neutral-700 focus:border-cyan-400 rounded-lg text-white text-base sm:text-xs font-mono placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 min-h-[44px]"
                   />
                 </div>
@@ -903,6 +904,9 @@ export const CustomerAuthModal: React.FC = () => {
                           <div className="text-right">
                             <span className="text-[10px] text-neutral-400 block">TOTAL BILLED</span>
                             <span className="font-bold text-white text-sm">{formatINR(order.total)}</span>
+                            <span className="text-[10px] font-mono text-cyan-400 block mt-0.5">
+                              In Bill: <strong>{getBillPaymentInfo(order.paymentMethod).billLabel}</strong>
+                            </span>
                           </div>
                         </div>
 

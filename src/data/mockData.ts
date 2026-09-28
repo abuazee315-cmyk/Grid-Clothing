@@ -405,7 +405,7 @@ export const INITIAL_ORDERS: Order[] = [
     status: 'Processing',
     createdAt: '2026-09-18T04:12:00Z',
     dispatchDate: '2026-09-19T10:00:00Z',
-    paymentMethod: 'UPI (Google Pay)',
+    paymentMethod: 'G-Pay',
   },
   {
     id: 'ord-1002',
@@ -440,7 +440,7 @@ export const INITIAL_ORDERS: Order[] = [
     status: 'Processing',
     createdAt: '2026-09-17T22:45:00Z',
     dispatchDate: '2026-09-18T16:00:00Z',
-    paymentMethod: 'Credit Card (HDFC RuPay)',
+    paymentMethod: 'Cash on delivery',
   },
   {
     id: 'ord-1003',
@@ -487,7 +487,7 @@ export const INITIAL_ORDERS: Order[] = [
     trackingNumber: 'BLUEDART-849201948',
     createdAt: '2026-09-17T18:10:00Z',
     dispatchDate: '2026-09-18T08:30:00Z',
-    paymentMethod: 'UPI (PhonePe)',
+    paymentMethod: 'P-Pay',
   },
   {
     id: 'ord-1004',
@@ -534,7 +534,7 @@ export const INITIAL_ORDERS: Order[] = [
     trackingNumber: 'DELHIVERY-99283741',
     createdAt: '2026-09-16T15:20:00Z',
     dispatchDate: '2026-09-17T11:00:00Z',
-    paymentMethod: 'UPI (Paytm)',
+    paymentMethod: 'G-Pay',
   },
   {
     id: 'ord-1005',
@@ -570,7 +570,7 @@ export const INITIAL_ORDERS: Order[] = [
     trackingNumber: 'BLUEDART-110294819',
     createdAt: '2026-09-15T11:05:00Z',
     dispatchDate: '2026-09-15T16:00:00Z',
-    paymentMethod: 'NetBanking (ICICI)',
+    paymentMethod: 'Cash on delivery',
   },
   {
     id: 'ord-1006',
@@ -617,7 +617,7 @@ export const INITIAL_ORDERS: Order[] = [
     trackingNumber: 'DELHIVERY-8849201948',
     createdAt: '2026-09-14T09:30:00Z',
     dispatchDate: '2026-09-14T14:20:00Z',
-    paymentMethod: 'UPI (Google Pay)',
+    paymentMethod: 'G-Pay',
   },
   {
     id: 'ord-1007',
@@ -652,7 +652,7 @@ export const INITIAL_ORDERS: Order[] = [
     status: 'Delivered',
     trackingNumber: 'BLUEDART-559102948',
     createdAt: '2026-09-12T14:15:00Z',
-    paymentMethod: 'Credit Card (Visa •••• 4242)',
+    paymentMethod: 'P-Pay',
   },
 ];
 

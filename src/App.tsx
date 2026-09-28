@@ -13,7 +13,7 @@ import { StoreProvider, useStore } from './context/StoreContext';
 import { StorefrontView } from './components/storefront/StorefrontView';
 import { AdminView } from './components/admin/AdminView';
 import { CustomerAuthModal } from './components/auth/CustomerAuthModal';
-import { AdminPasscodeModal } from './components/auth/AdminPasscodeModal';
+import { AdminGateModal } from './components/auth/AdminGateModal';
 import { ProductBillModal } from './components/common/ProductBillModal';
 import { CheckCircle, Info, X } from 'lucide-react';
 
@@ -34,8 +34,8 @@ const RootContent: React.FC = () => {
       {/* Global Customer Authentication & Profile Modal */}
       <CustomerAuthModal />
 
-      {/* Global Administrator Passcode Gate Modal */}
-      <AdminPasscodeModal />
+      {/* Global Administrator Gate Modal */}
+      <AdminGateModal />
 
       {/* Global Printable Products Bill / Tax Invoice Modal */}
       <ProductBillModal

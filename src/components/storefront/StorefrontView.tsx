@@ -388,11 +388,6 @@ export const StorefrontView: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-center justify-between text-[11px] text-neutral-500 gap-4">
             <div className="flex flex-wrap items-center gap-3">
               <p>© 2026 GRID CLOTHING CO. ALL RIGHTS RESERVED. // CLASSIC FORM. PREMIUM FEEL.</p>
-              <span className="hidden sm:inline text-neutral-700">•</span>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-300 font-mono text-[10px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse"></span>
-                <span>Published by <strong className="text-white">Lovable</strong></span>
-              </div>
             </div>
             <div className="flex items-center gap-4">
               <span>PRIVACY POLICY</span>

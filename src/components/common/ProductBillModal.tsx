@@ -1,8 +1,9 @@
 import React from 'react';
-import { Printer, X, CheckCircle, Truck, Calendar, MapPin, Tag } from 'lucide-react';
+import { Printer, X, Truck, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { Order } from '../../types';
 import { formatINR } from '../../utils/currency';
 import { GridBrandLogo } from './GridBrandLogo';
+import { getBillPaymentInfo } from '../../utils/paymentUtils';
 
 interface ProductBillModalProps {
   order: Order | null;
@@ -40,6 +41,7 @@ export const ProductBillModal: React.FC<ProductBillModalProps> = ({
     : 'Scheduled within 24 Hours';
 
   const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  const paymentInfo = getBillPaymentInfo(order.paymentMethod);
 
   return (
     <div
@@ -55,10 +57,11 @@ export const ProductBillModal: React.FC<ProductBillModalProps> = ({
             </div>
             <div>
               <h3 className="font-display font-bold text-sm text-white uppercase tracking-wider">
-                Product Bill // Tax Invoice
+                Product Bill // Retail Tax Invoice
               </h3>
               <p className="text-[11px] font-mono text-neutral-400">
-                Order Ref: <span className="text-cyan-400 font-semibold">{order.orderNumber}</span>
+                Order Ref: <span className="text-cyan-400 font-semibold">{order.orderNumber}</span> • Bill Payment:{' '}
+                <strong className="text-white">{paymentInfo.billLabel}</strong>
               </p>
             </div>
           </div>
@@ -106,7 +109,7 @@ export const ProductBillModal: React.FC<ProductBillModalProps> = ({
                     </span>
                   </div>
                   <p className="text-xs font-serif italic text-neutral-800 font-semibold mt-1">
-                    "Classic Form. Premium Feel."
+                    &quot;Classic Form. Premium Feel.&quot;
                   </p>
                   <p className="text-xs text-neutral-600 mt-0.5 font-medium">
                     Architectural Heavyweight Garments & Streetwear Co.
@@ -137,9 +140,27 @@ export const ProductBillModal: React.FC<ProductBillModalProps> = ({
                 <p className="font-mono text-xs text-neutral-600">
                   Date: <strong>{formattedOrderDate}</strong>
                 </p>
-                <p className="font-mono text-xs text-neutral-600">
-                  Payment: <strong>{order.paymentMethod}</strong>
-                </p>
+                
+                {/* PROMINENT PAYMENT METHOD FIELD IN BILL */}
+                <div className="mt-2 pt-2 border-t border-neutral-200 flex flex-col sm:items-end">
+                  <p className="font-mono text-xs text-neutral-700">
+                    Payment in Bill:
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="font-display font-black text-base text-black bg-neutral-100 border border-neutral-300 px-2 py-0.5 rounded shadow-sm">
+                      {paymentInfo.billLabel}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono text-neutral-500 mt-0.5">
+                    {paymentInfo.channel}
+                  </span>
+                  {paymentInfo.recipientPhone && (
+                    <span className="text-[10px] font-mono font-bold text-cyan-800 mt-0.5">
+                      Paid to Phone: +91 {paymentInfo.recipientPhone}
+                    </span>
+                  )}
+                </div>
+
                 <p className="font-mono text-[11px] text-emerald-700 font-bold mt-1">
                   Status: {order.status.toUpperCase()}
                 </p>
@@ -171,7 +192,7 @@ export const ProductBillModal: React.FC<ProductBillModalProps> = ({
                   </span>
                   <p className="font-bold text-black text-xs">
                     {order.shippingOption ||
-                      (order.shipping === 0 ? '1. Free Delivery' : '2. Delivery Charge')}
+                      (order.shipping === 0 ? 'Free Delivery' : 'Standard Delivery')}
                   </p>
                   <p className="text-neutral-600 text-[11px] mt-0.5">
                     Dispatch Date:{' '}
@@ -186,18 +207,23 @@ export const ProductBillModal: React.FC<ProductBillModalProps> = ({
 
                 <div className="mt-2 pt-2 border-t border-neutral-200 text-[11px] text-neutral-600 flex justify-between">
                   <span>Shipping Fee Charged:</span>
-                  <strong className={order.shipping === 0 ? 'text-emerald-700' : 'text-neutral-900'}>
+                  <strong className={order.shipping === 0 ? 'text-emerald-700 font-bold' : 'text-neutral-900 font-bold'}>
                     {order.shipping === 0 ? 'FREE (₹0)' : formatINR(order.shipping)}
                   </strong>
                 </div>
               </div>
             </div>
 
-            {/* Line Items Table */}
+            {/* Line Items Table: Clear Product Price, Qty, and Line Total */}
             <div className="py-5 border-b border-neutral-200">
-              <h4 className="font-mono text-[11px] font-bold text-neutral-700 uppercase tracking-wider mb-2.5">
-                ORDERED PRODUCTS ({totalQuantity} {totalQuantity === 1 ? 'UNIT' : 'UNITS'})
-              </h4>
+              <div className="flex items-center justify-between mb-2.5">
+                <h4 className="font-mono text-[11px] font-bold text-neutral-700 uppercase tracking-wider">
+                  ORDERED PRODUCTS ({totalQuantity} {totalQuantity === 1 ? 'UNIT' : 'UNITS'})
+                </h4>
+                <span className="text-[10px] font-mono text-neutral-500">
+                  All unit prices in INR (₹)
+                </span>
+              </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
@@ -206,9 +232,9 @@ export const ProductBillModal: React.FC<ProductBillModalProps> = ({
                       <th className="py-2.5 px-3">Sl.</th>
                       <th className="py-2.5 px-3">Product Description</th>
                       <th className="py-2.5 px-3">Variant Details</th>
-                      <th className="py-2.5 px-3 text-right">Unit Price</th>
+                      <th className="py-2.5 px-3 text-right">Product Price (Unit)</th>
                       <th className="py-2.5 px-3 text-center">Qty</th>
-                      <th className="py-2.5 px-3 text-right">Total</th>
+                      <th className="py-2.5 px-3 text-right">Product Total</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-200 font-mono text-xs">
@@ -230,13 +256,13 @@ export const ProductBillModal: React.FC<ProductBillModalProps> = ({
                             <span className="mx-1">•</span>
                             <span>Color: <strong>{item.selectedColor}</strong></span>
                           </td>
-                          <td className="py-3 px-3 text-right text-neutral-800">
+                          <td className="py-3 px-3 text-right font-bold text-neutral-800">
                             {formatINR(item.price)}
                           </td>
                           <td className="py-3 px-3 text-center font-bold text-neutral-900">
                             {item.quantity}
                           </td>
-                          <td className="py-3 px-3 text-right font-bold text-neutral-900">
+                          <td className="py-3 px-3 text-right font-black text-neutral-900">
                             {formatINR(lineTotal)}
                           </td>
                         </tr>
@@ -249,26 +275,79 @@ export const ProductBillModal: React.FC<ProductBillModalProps> = ({
 
             {/* Calculations & Invoice Total */}
             <div className="py-5 border-b border-neutral-200 flex flex-col sm:flex-row justify-between items-start gap-6">
-              {/* Payment & Terms */}
-              <div className="text-xs text-neutral-600 max-w-sm space-y-1.5">
-                <span className="font-mono font-bold text-[10px] text-neutral-500 uppercase tracking-wider block">
-                  TERMS & CONDITIONS:
-                </span>
-                <p className="text-[11px] leading-relaxed text-neutral-600">
-                  1. 30-day exchange window valid with intact security tags & invoice copy.
-                </p>
-                <p className="text-[11px] leading-relaxed text-neutral-600">
-                  2. All prices inclusive of applicable Goods and Services Tax (GST).
-                </p>
-                <p className="text-[11px] leading-relaxed text-neutral-600">
-                  3. Computer generated tax invoice; no physical signature needed.
-                </p>
+              
+              {/* Payment Verification Certificate Box & Terms */}
+              <div className="text-xs text-neutral-600 max-w-sm w-full space-y-3">
+                {/* User's Exact Requirement: In bill GPay, P-Pay, or Cash on delivery */}
+                <div className={`p-4 rounded-lg border ${
+                  paymentInfo.type === 'gpay'
+                    ? 'bg-cyan-50/70 border-cyan-300 text-cyan-950'
+                    : paymentInfo.type === 'phonepe'
+                    ? 'bg-purple-50/70 border-purple-300 text-purple-950'
+                    : 'bg-emerald-50/70 border-emerald-300 text-emerald-950'
+                }`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono font-bold text-[10px] uppercase text-neutral-700">
+                      BILL PAYMENT METHOD:
+                    </span>
+                    <span className={`font-mono font-black text-xs px-2.5 py-0.5 rounded uppercase border shadow-sm ${
+                      paymentInfo.type === 'gpay'
+                        ? 'bg-cyan-600 text-white border-cyan-700'
+                        : paymentInfo.type === 'phonepe'
+                        ? 'bg-purple-700 text-white border-purple-800'
+                        : 'bg-emerald-700 text-white border-emerald-800'
+                    }`}>
+                      {paymentInfo.billLabel}
+                    </span>
+                  </div>
+
+                  <p className="text-xs font-bold text-neutral-900 mt-2">
+                    {paymentInfo.description}
+                  </p>
+
+                  {paymentInfo.recipientPhone && (
+                    <div className="mt-2.5 p-2 bg-white/95 rounded border border-neutral-300 text-[11px] font-mono flex items-center justify-between shadow-xs">
+                      <span className="text-neutral-600 font-medium">Merchant Payee Phone:</span>
+                      <strong className="text-neutral-950 font-bold tracking-wider">+91 {paymentInfo.recipientPhone}</strong>
+                    </div>
+                  )}
+
+                  <div className="mt-2.5 pt-2 border-t border-neutral-200/80 space-y-1 font-mono text-[11px]">
+                    <div className="flex justify-between">
+                      <span className="text-neutral-600">Settlement Mode:</span>
+                      <strong className="text-neutral-900">{paymentInfo.channel}</strong>
+                    </div>
+                    {paymentInfo.details && paymentInfo.details !== paymentInfo.billLabel && (
+                      <div className="flex justify-between text-[10px] text-neutral-500">
+                        <span>Reference:</span>
+                        <span className="font-medium text-neutral-700 truncate max-w-[190px]">
+                          {paymentInfo.details}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-1 pt-1">
+                  <span className="font-mono font-bold text-[10px] text-neutral-500 uppercase tracking-wider block">
+                    TAX INVOICE TERMS:
+                  </span>
+                  <p className="text-[11px] leading-relaxed text-neutral-600">
+                    1. 30-day exchange window valid with intact security tags & invoice copy.
+                  </p>
+                  <p className="text-[11px] leading-relaxed text-neutral-600">
+                    2. All prices inclusive of applicable Goods and Services Tax (GST).
+                  </p>
+                  <p className="text-[11px] leading-relaxed text-neutral-600">
+                    3. Official computer generated tax invoice; no physical signature needed.
+                  </p>
+                </div>
               </div>
 
-              {/* Price Breakdown */}
-              <div className="w-full sm:w-72 space-y-2 text-xs font-mono">
+              {/* Price Breakdown Container */}
+              <div className="w-full sm:w-80 space-y-2 text-xs font-mono bg-neutral-50 p-4 rounded-lg border border-neutral-200">
                 <div className="flex justify-between text-neutral-600">
-                  <span>Subtotal:</span>
+                  <span>Product Price Subtotal:</span>
                   <span className="font-bold text-neutral-900">{formatINR(order.subtotal)}</span>
                 </div>
 
@@ -281,10 +360,10 @@ export const ProductBillModal: React.FC<ProductBillModalProps> = ({
 
                 <div className="flex justify-between text-neutral-600">
                   <span className="truncate pr-2">
-                    Delivery ({order.shippingOption || (order.shipping === 0 ? '1. Free' : '2. Charge')}):
+                    Delivery ({order.shippingOption || (order.shipping === 0 ? 'Free Delivery' : 'Standard Delivery')}):
                   </span>
                   <span className={`font-bold ${order.shipping === 0 ? 'text-emerald-700' : 'text-neutral-900'}`}>
-                    {order.shipping === 0 ? 'FREE' : formatINR(order.shipping)}
+                    {order.shipping === 0 ? 'FREE (₹0)' : formatINR(order.shipping)}
                   </span>
                 </div>
 
@@ -293,9 +372,16 @@ export const ProductBillModal: React.FC<ProductBillModalProps> = ({
                   <span className="font-bold text-neutral-900">{formatINR(order.tax)}</span>
                 </div>
 
-                <div className="pt-2.5 border-t-2 border-neutral-900 flex justify-between items-baseline text-sm">
-                  <span className="font-display font-bold uppercase text-black">Total Paid:</span>
-                  <span className="font-display font-black text-xl text-black">
+                <div className="pt-3 border-t-2 border-neutral-900 flex justify-between items-baseline text-sm">
+                  <div className="flex flex-col">
+                    <span className="font-display font-black uppercase text-black text-sm">
+                      {paymentInfo.type === 'cod' ? 'Total Due on Delivery:' : 'Total Amount Paid:'}
+                    </span>
+                    <span className="text-[10px] text-neutral-500 font-mono">
+                      Billed via {paymentInfo.billLabel}
+                    </span>
+                  </div>
+                  <span className="font-display font-black text-2xl text-black">
                     {formatINR(order.total)}
                   </span>
                 </div>
@@ -312,7 +398,7 @@ export const ProductBillModal: React.FC<ProductBillModalProps> = ({
                   Classic Form. Premium Feel.
                 </p>
                 <p className="text-[10px] text-neutral-500 font-mono mt-0.5">
-                  For support & care enquiries: care@gridclothing.ai • Authorized Tax Invoice
+                  Official Retail Tax Invoice • Care: care@gridclothing.ai • Payment: {paymentInfo.billLabel}
                 </p>
               </div>
 

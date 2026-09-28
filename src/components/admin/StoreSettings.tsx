@@ -12,6 +12,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Percent,
+  Smartphone,
+  Phone,
 } from 'lucide-react';
 import { useStore } from '../../context/StoreContext';
 import { formatINR } from '../../utils/currency';
@@ -520,6 +522,56 @@ export const StoreSettings: React.FC = () => {
         </div>
 
         {/* ========================================================================= */}
+        {/* ONLINE DIRECT PAYMENT GATEWAYS & PHONE RECIPIENT */}
+        {/* ========================================================================= */}
+        <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-5 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-neutral-800 pb-2 flex-wrap gap-2">
+            <div className="flex items-center gap-2 text-white">
+              <Smartphone size={16} className="text-cyan-400" />
+              <h3 className="font-display font-bold text-sm uppercase">Online Direct Payments (G-Pay & P-Pay)</h3>
+            </div>
+            <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-emerald-950/60 text-emerald-400 border border-emerald-800 rounded">
+              ACTIVE MERCHANT RECEIVER
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-4 bg-neutral-950 rounded-xl border border-cyan-500/30 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase text-cyan-400 font-bold">G-Pay / P-Pay Receiver Phone No.</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.2 bg-cyan-950 text-cyan-300 rounded border border-cyan-800">
+                  OFFICIAL
+                </span>
+              </div>
+              <div className="text-xl font-bold font-mono text-white tracking-wider">
+                +91 9611856691
+              </div>
+              <p className="text-[11px] text-neutral-400 leading-relaxed">
+                Customers checking out online via G-Pay or P-Pay can send direct payments to this phone number. The transaction is instantly recorded on the product bill.
+              </p>
+            </div>
+
+            <div className="p-4 bg-neutral-950 rounded-xl border border-neutral-800 space-y-2">
+              <span className="text-[10px] uppercase text-neutral-400 font-bold block">Bill of Product Output</span>
+              <ul className="text-[11px] font-mono space-y-1.5 text-neutral-300">
+                <li className="flex items-center justify-between">
+                  <span className="text-neutral-400">Paid via Google Pay:</span>
+                  <strong className="text-cyan-400 bg-cyan-950/50 px-2 py-0.5 rounded border border-cyan-800/40">G-Pay</strong>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="text-neutral-400">Paid via PhonePe:</span>
+                  <strong className="text-purple-400 bg-purple-950/50 px-2 py-0.5 rounded border border-purple-800/40">P-Pay</strong>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="text-neutral-400">Doorstep Delivery:</span>
+                  <strong className="text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-800/40">Cash on delivery</strong>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
         {/* ATELIER IDENTITY */}
         {/* ========================================================================= */}
         <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-5 sm:p-6 space-y-4">
@@ -704,20 +756,20 @@ export const StoreSettings: React.FC = () => {
         </div>
       </form>
 
-      {/* Demo Data Management & Reset Section */}
+      {/* Data Management & Catalog Reset Section */}
       <div className="mt-12 pt-6 border-t border-neutral-800 space-y-3 bg-neutral-900/30 p-5 rounded-lg border border-neutral-800">
-        <div className="flex items-center gap-2 text-amber-400">
+        <div className="flex items-center gap-2 text-cyan-400">
           <Database size={16} />
-          <h4 className="font-bold uppercase text-xs">Sandbox & Mock Data Controls</h4>
+          <h4 className="font-bold uppercase text-xs">Catalog & Store Data Management</h4>
         </div>
         <p className="text-neutral-400 text-xs">
           Currently managing <strong className="text-white">{products.length} active SKUs</strong> and{' '}
-          <strong className="text-white">{orders.length} order history records</strong> in local sandbox storage.
+          <strong className="text-white">{orders.length} order history records</strong> in active store storage.
         </p>
         <button
           type="button"
           onClick={() => {
-            if (window.confirm('Reset all products, orders, and delivery settings to initial showcase demo defaults?')) {
+            if (window.confirm('Reset all products, orders, and delivery settings to default catalog state?')) {
               resetStoreData();
               setDeliveryForm({
                 isFreeDelivery: false,
@@ -731,7 +783,7 @@ export const StoreSettings: React.FC = () => {
           className="px-4 py-2 bg-neutral-900 hover:bg-rose-950 hover:text-rose-400 border border-neutral-700 text-neutral-300 rounded flex items-center gap-2 transition-colors cursor-pointer"
         >
           <RotateCcw size={14} />
-          <span>Reset All Mock Data to Factory Demo Defaults</span>
+          <span>Restore Store Catalog to System Defaults</span>
         </button>
       </div>
     </div>

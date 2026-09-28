@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useStore, ADMIN_PASSCODE } from '../../context/StoreContext';
+import { useStore } from '../../context/StoreContext';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminDashboard } from './AdminDashboard';
 import { InventoryManagement } from './InventoryManagement';
@@ -13,7 +13,6 @@ import {
   Lock,
   Eye,
   EyeOff,
-  KeyRound,
   ShieldAlert,
 } from 'lucide-react';
 
@@ -55,13 +54,6 @@ export const AdminView: React.FC = () => {
           inputRef.current?.select();
         }
       }, 200);
-    };
-
-    const handleAutoFill = () => {
-      setPasscode(ADMIN_PASSCODE);
-      setTimeout(() => {
-        verifyAdminPasscode(ADMIN_PASSCODE);
-      }, 150);
     };
 
     return (
@@ -133,24 +125,6 @@ export const AdminView: React.FC = () => {
                     {showPasscode ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-              </div>
-
-              {/* Demo Hint & Quick Fill */}
-              <div className="p-3 bg-neutral-950/60 border border-neutral-800 rounded-lg flex items-center justify-between text-[11px] font-mono">
-                <div className="flex items-center gap-1.5 text-neutral-400">
-                  <KeyRound size={13} className="text-cyan-400 shrink-0" />
-                  <span>Passcode:</span>
-                  <code className="text-cyan-300 bg-neutral-800/80 px-1.5 py-0.5 rounded font-mono select-all">
-                    {ADMIN_PASSCODE}
-                  </code>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleAutoFill}
-                  className="text-[10px] text-cyan-400 hover:text-cyan-300 underline font-bold transition-colors cursor-pointer"
-                >
-                  Auto-fill
-                </button>
               </div>
 
               <div className="pt-2 flex flex-col sm:flex-row gap-2.5">

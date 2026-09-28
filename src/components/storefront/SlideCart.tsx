@@ -288,13 +288,26 @@ export const SlideCart: React.FC = () => {
                 onClick={handleProceedToCheckout}
                 className="w-full py-4 bg-white active:bg-cyan-400 text-black font-display font-black text-xs uppercase tracking-wider rounded transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg min-h-[48px]"
               >
-                <span>PROCEED TO CHECKOUT</span>
+                <span>PROCEED TO CHECKOUT ({formatINR(cartTotal)})</span>
                 <ArrowRight size={15} />
               </button>
 
-              <div className="flex items-center justify-center gap-1.5 text-[10px] font-mono text-neutral-500">
-                <ShieldCheck size={12} className="text-cyan-400" />
-                <span>256-Bit Encrypted Secure Checkout</span>
+              <div className="flex flex-col items-center gap-1 text-[10px] font-mono text-neutral-400">
+                <div className="flex items-center gap-2">
+                  <span className="text-neutral-500">Direct Pay:</span>
+                  <span className="text-cyan-400 font-bold">G-Pay</span>
+                  <span>•</span>
+                  <span className="text-purple-400 font-bold">P-Pay</span>
+                  <span>•</span>
+                  <span className="text-emerald-400 font-bold">Cash on delivery</span>
+                </div>
+                <div className="text-[9px] text-cyan-300 font-mono">
+                  Online Direct: Pay to Phone <strong>9611856691</strong>
+                </div>
+                <div className="flex items-center gap-1 text-neutral-500 text-[9px]">
+                  <ShieldCheck size={11} className="text-cyan-400" />
+                  <span>Exact Product Prices • Official Bill Included</span>
+                </div>
               </div>
             </div>
           )}

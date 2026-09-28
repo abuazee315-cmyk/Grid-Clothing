@@ -20,6 +20,7 @@ import {
 import { useStore } from '../../context/StoreContext';
 import { Order, OrderStatus } from '../../types';
 import { formatINR } from '../../utils/currency';
+import { getBillPaymentInfo } from '../../utils/paymentUtils';
 import { OrderDateEditModal } from './OrderDateEditModal';
 import { AddNewOrderModal } from './AddNewOrderModal';
 
@@ -230,7 +231,9 @@ export const OrderFulfillment: React.FC = () => {
                     {/* Total Amount */}
                     <td className="py-3 px-4">
                       <span className="font-bold text-white">{formatINR(order.total)}</span>
-                      <span className="text-[10px] text-neutral-500 block">{order.paymentMethod}</span>
+                      <span className="text-[10px] text-neutral-400 block font-mono">
+                        Bill: <strong className="text-cyan-400">{getBillPaymentInfo(order.paymentMethod).billLabel}</strong>
+                      </span>
                     </td>
 
                     {/* Date of Ordered */}

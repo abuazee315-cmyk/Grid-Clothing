@@ -55,7 +55,7 @@ export const AddNewOrderModal: React.FC<AddNewOrderModalProps> = ({
   const [country, setCountry] = useState('India');
 
   // Payment & Logistics
-  const [paymentMethod, setPaymentMethod] = useState('Cash on Delivery (COD)');
+  const [paymentMethod, setPaymentMethod] = useState('Cash on delivery');
   const [orderStatus, setOrderStatus] = useState<OrderStatus>('Processing');
   const [shippingFee, setShippingFee] = useState<number>(0);
 
@@ -271,7 +271,7 @@ export const AddNewOrderModal: React.FC<AddNewOrderModalProps> = ({
                   required
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="e.g. Arjun Mehta"
+                  placeholder="Enter customer name"
                   className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-md text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-cyan-400 font-mono"
                 />
               </div>
@@ -285,7 +285,7 @@ export const AddNewOrderModal: React.FC<AddNewOrderModalProps> = ({
                   required
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
-                  placeholder="arjun@example.com"
+                  placeholder="customer@domain.com"
                   className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-md text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-cyan-400 font-mono"
                 />
               </div>
@@ -298,7 +298,7 @@ export const AddNewOrderModal: React.FC<AddNewOrderModalProps> = ({
                   type="tel"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="+91 98200 12345"
+                  placeholder="+91 Mobile number"
                   className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-md text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-cyan-400 font-mono"
                 />
               </div>
@@ -526,18 +526,20 @@ export const AddNewOrderModal: React.FC<AddNewOrderModalProps> = ({
                   onChange={(e) => setPaymentMethod(e.target.value)}
                   className="w-full px-3 py-2 bg-neutral-900 border border-neutral-800 rounded-md text-xs text-white focus:outline-none focus:border-cyan-400 font-mono"
                 >
-                  <option value="Cash on delivery (COD)">1. Cash on delivery (COD)</option>
-                  <option value="Google Pay (GPay UPI)">2. Google Pay (GPay UPI)</option>
-                  <option value="PhonePe (Phone Pay / P-Pay)">3. PhonePe (Phone Pay / P-Pay)</option>
-                  <optgroup label="Google Pay Linked Banks">
-                    <option value="Google Pay • Corporation Bank">Google Pay • Corporation Bank</option>
-                    <option value="Google Pay • Union Bank of India">Google Pay • Union Bank of India</option>
-                    <option value="Google Pay • Bank of Baroda">Google Pay • Bank of Baroda</option>
+                  <option value="Cash on delivery">1. Cash on delivery</option>
+                  <option value="G-Pay • Paid to Phone 9611856691">2. G-Pay • Paid to Phone 9611856691</option>
+                  <option value="P-Pay • Paid to Phone 9611856691">3. P-Pay • Paid to Phone 9611856691</option>
+                  <option value="G-Pay">G-Pay (Google Pay UPI Collect)</option>
+                  <option value="P-Pay">P-Pay (PhonePe UPI Collect)</option>
+                  <optgroup label="G-Pay (Google Pay) Linked Banks">
+                    <option value="G-Pay • Corporation Bank">G-Pay • Corporation Bank</option>
+                    <option value="G-Pay • Union Bank of India">G-Pay • Union Bank of India</option>
+                    <option value="G-Pay • Bank of Baroda">G-Pay • Bank of Baroda</option>
                   </optgroup>
-                  <optgroup label="PhonePe (P-Pay) Linked Banks">
-                    <option value="PhonePe • Corporation Bank">PhonePe • Corporation Bank</option>
-                    <option value="PhonePe • Union Bank of India">PhonePe • Union Bank of India</option>
-                    <option value="PhonePe • Bank of Baroda">PhonePe • Bank of Baroda</option>
+                  <optgroup label="P-Pay (PhonePe) Linked Banks">
+                    <option value="P-Pay • Corporation Bank">P-Pay • Corporation Bank</option>
+                    <option value="P-Pay • Union Bank of India">P-Pay • Union Bank of India</option>
+                    <option value="P-Pay • Bank of Baroda">P-Pay • Bank of Baroda</option>
                   </optgroup>
                   <optgroup label="Other Payment Modes">
                     <option value="Credit / Debit Card">Credit / Debit Card</option>
